@@ -1,4 +1,4 @@
-name: Monitor de Jogo
+name: Scraper Newcastle Live
 
 on:
   schedule:
@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout do código
+      - name: Checkout
         uses: actions/checkout@v3
 
       - name: Configurar Python
@@ -17,24 +17,16 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Instalar Dependencias
-        run: |
-          pip install selenium webdriver-manager
+      - name: Instalar Selenium
+        run: pip install selenium webdriver-manager
 
       - name: Executar Scraper
         run: python scraper.py
 
-      - name: Limpeza do GitHub
-        run: |
-          # Procura a linha com o cronômetro (') ou HT. 
-          # Se não achar nada ao vivo, ele NÃO apaga o arquivo, mantém o que o Python pegou.
-          grep -E "('|HT)" placares.txt > vivo.txt || cp placares.txt vivo.txt
-          mv vivo.txt placares.txt
-
-      - name: Subir para o Repo
+      - name: Salvar no GitHub
         run: |
           git config --global user.name "Bot Placar"
           git config --global user.email "bot@github.com"
           git add placares.txt
-          git commit -m "Placar Atualizado" || exit 0
+          git commit -m "Newcastle Update: $(cat placares.txt)" || exit 0
           git push
