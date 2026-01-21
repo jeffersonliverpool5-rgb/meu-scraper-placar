@@ -2,7 +2,7 @@ name: Scraper Paulistão Live
 
 on:
   schedule:
-    - cron: '*/2 * * * *' # Diminuído para 2 minutos para ser mais preciso
+    - cron: '*/3 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -33,5 +33,5 @@ jobs:
           git config --global user.name "Bot Placar"
           git config --global user.email "bot@github.com"
           git add placares.txt
-          git commit -m "Placar: $(cat placares.txt)" || exit 0
+          git commit -m "Live: $(cat placares.txt)" || exit 0
           git push
