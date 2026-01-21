@@ -16,49 +16,39 @@ def buscar_placar_exato():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
-        # LINK DO JOGO NEWCASTLE X PSV (ID 757778)
+        # LINK DO JOGO NEWCASTLE X PSV
         driver.get("https://www.espn.com.br/futebol/partida/_/jogoId/757778")
         
-        # Espera forçada para o site carregar totalmente os números
-        time.sleep(45) 
+        # Espera para carregar os elementos dinâmicos
+        time.sleep(30) 
 
-        # NOMES DOS TIMES
         TIME_A = "Newcastle"
         TIME_B = "PSV"
 
-        # 1. BUSCA O TEMPO (MINUTO)
+        # 1. BUSCA O TEMPO
         tempo = "Início"
         try:
-            # Tenta achar o elemento do minuto
-            tempo_el = driver.find_element(By.CSS_SELECTOR, ".game-time, .status-detail, .Gamestrip__Time")
+            # Seletores atualizados para o tempo
+            tempo_el = driver.find_element(By.CSS_SELECTOR, ".GameStatus__Text, .game-time, .status-detail")
             if tempo_el.text:
                 tempo = tempo_el.text.strip()
         except:
-            # Se falhar, procura algo com ' no texto
             texto_bruto = driver.find_element(By.TAG_NAME, "body").text
-            minutos = re.findall(r"\d+'|HT|Intervalo|Fim", texto_bruto)
+            minutos = re.findall(r"\d+'|HT|Intervalo|Fim|FIM", texto_bruto)
             if minutos: tempo = minutos[0]
 
-        # 2. BUSCA OS GOLS (PLACAR)
-        # Vamos pegar especificamente os números que estão dentro do cabeçalho do jogo
+        # 2. BUSCA OS GOLS (PLACAR) - AJUSTADO PARA AS NOVAS CLASSES DA ESPN
         gols = ["0", "0"]
         try:
-            # Pega os elementos com a classe 'score'
-            scores = driver.find_elements(By.CLASS_NAME, "score")
+            # A ESPN agora usa frequentemente a classe 'DetailView__Score' ou 'score' dentro de spans
+            scores = driver.find_elements(By.CSS_SELECTOR, ".DetailView__Score, .score")
             if len(scores) >= 2:
-                gols = [s.text.strip() for s in scores if s.text.strip().isdigit()]
-            
-            # Se ainda não veio o placar, tenta pelo Gamestrip
-            if len(gols) < 2:
-                header = driver.find_element(By.CLASS_NAME, "Gamestrip")
-                gols_header = re.findall(r"\b\d+\b", header.text)
-                if len(gols_header) >= 2:
-                    gols = gols_header[:2]
+                temp_gols = [s.text.strip() for s in scores if s.text.strip().isdigit()]
+                if len(temp_gols) >= 2:
+                    gols = temp_gols
         except:
             pass
 
-        # MONTAGEM FINAL
-        # Se os gols vierem vazios por erro de carga, mantemos o 0 X 0 mas com os nomes certos
         gol_casa = gols[0] if len(gols) >= 1 else "0"
         gol_fora = gols[1] if len(gols) >= 2 else "0"
 
