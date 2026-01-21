@@ -6,7 +6,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 import time
 
-def buscar_detalhes_partida():
+def buscar_placar_zed_fc():
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
@@ -17,37 +17,47 @@ def buscar_detalhes_partida():
     
     try:
         url = "https://www.aiscore.com/match-zed-fc-al-masry/ndkz6i3n5yjcxq3"
+        print("Acessando página da partida...")
         driver.get(url)
         
-        # Aumentamos o tempo para garantir que o cronômetro e o score carreguem
+        # Espera o carregamento completo (ajuste para 50s se necessário)
         time.sleep(45) 
 
         with open("placares.txt", "w", encoding="utf-8") as f:
-            try:
-                # Tenta capturar o placar (geralmente em classes como 'score' ou dentro do header)
-                # No AiScore, o placar ao vivo costuma ficar em elementos com a classe 'home-score' e 'away-score'
-                casa = driver.find_element(By.CLASS_NAME, "home-name").text
-                fora = driver.find_element(By.CLASS_NAME, "away-name").text
-                
-                # Busca o placar e o minuto
-                score_casa = driver.find_element(By.CLASS_NAME, "home-score").text
-                score_fora = driver.find_element(By.CLASS_NAME, "away-score").text
-                minuto = driver.find_element(By.CLASS_NAME, "status-time").text # Classe comum para o tempo
-                
-                resultado = f"{minuto}' | {casa} {score_casa} - {score_fora} {fora}"
-                f.write(resultado)
-                print(f"Sucesso: {resultado}")
-                
-            except Exception:
-                # Se falhar nos elementos específicos, tenta pegar o bloco central de informações
+            # Captura o texto de elementos que costumam conter o placar e tempo
+            # Tentamos IDs e Classes comuns de containers de score
+            seletores = [
+                "//div[contains(@class, 'match-header')]",
+                "//div[contains(@class, 'score-container')]",
+                "//div[contains(@class, 'match-detail-header')]",
+                "//div[@id='match-header']"
+            ]
+            
+            encontrou = False
+            for seletor in seletores:
                 try:
-                    info_central = driver.find_element(By.CLASS_NAME, "match-header").text
-                    f.write(info_central.replace("\n", " "))
+                    elemento = driver.find_element(By.XPATH, seletor)
+                    texto = elemento.text.strip().replace("\n", " ")
+                    if len(texto) > 10:
+                        f.write(texto)
+                        print(f"Dados capturados: {texto}")
+                        encontrou = True
+                        break
                 except:
-                    f.write("Ainda carregando dados ou elemento não encontrado.")
+                    continue
+            
+            if not encontrou:
+                # Se tudo falhar, ele salva o texto bruto do corpo da página
+                print("Tentando captura bruta...")
+                corpo = driver.find_element(By.TAG_NAME, "body").text
+                # Filtra apenas a parte que cita os times para não vir lixo
+                if "ZED FC" in corpo:
+                    f.write(corpo.split("ZED FC")[1][:200].replace("\n", " "))
+                else:
+                    f.write("Erro: Não foi possível localizar o placar na tela.")
 
     finally:
         driver.quit()
 
 if __name__ == "__main__":
-    buscar_detalhes_partida()
+    buscar_placar_zed_fc()
