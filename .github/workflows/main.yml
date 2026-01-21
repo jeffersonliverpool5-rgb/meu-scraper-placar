@@ -1,4 +1,4 @@
-name: Atualizar Placar
+name: Monitor de Jogo
 
 on:
   schedule:
@@ -24,10 +24,17 @@ jobs:
       - name: Executar Scraper
         run: python scraper.py
 
-      - name: Salvar Alteracoes
+      - name: Limpeza do GitHub
+        run: |
+          # Procura a linha com o cronômetro (') ou HT. 
+          # Se não achar nada ao vivo, ele NÃO apaga o arquivo, mantém o que o Python pegou.
+          grep -E "('|HT)" placares.txt > vivo.txt || cp placares.txt vivo.txt
+          mv vivo.txt placares.txt
+
+      - name: Subir para o Repo
         run: |
           git config --global user.name "Bot Placar"
           git config --global user.email "bot@github.com"
           git add placares.txt
-          git commit -m "Placar atualizado" || exit 0
+          git commit -m "Placar Atualizado" || exit 0
           git push
