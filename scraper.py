@@ -6,7 +6,7 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 
-def buscar_placar():
+def buscar_placar_ge():
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
@@ -16,55 +16,49 @@ def buscar_placar():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
-        # URL exata do jogo São Paulo x Portuguesa
-        driver.get("https://www.espn.com.br/futebol/partida/_/jogoId/762098")
+        # LINK DO GE ENVIADO
+        driver.get("https://ge.globo.com/sp/futebol/campeonato-paulista/jogo/21-01-2026/sao-paulo-portuguesa.ghtml")
         
-        # Espera o carregamento (reduzido para 15s para ser mais ágil no GitHub)
+        # O GE carrega rápido, 15s é suficiente
         time.sleep(15)
 
-        # 1. BUSCAR O TEMPO REAL (Priorizando o relógio do topo)
-        tempo = "Início"
-        try:
-            # Tenta o seletor do cronômetro principal que aparece no placar do topo
-            # Esse seletor ".GameState__Time" é o mais comum para o tempo corrido
-            el_tempo = driver.find_element(By.CSS_SELECTOR, ".GameStatus__Text, .GameState__Time, .ScoreCell__Time--active")
-            if el_tempo.text:
-                tempo = el_tempo.text.strip()
-        except:
-            # Se falhar, procura por qualquer texto que tenha o símbolo de minutos (') no topo da página
-            try:
-                header = driver.find_element(By.ID, "gamepackage-header-wrap")
-                match = re.search(r"\d+'(\+\d+)?'|HT|Intervalo|Fim", header.text)
-                if match:
-                    tempo = match.group()
-            except:
-                pass
+        # 1. BUSCAR GOLS
+        # No GE os gols ficam em classes 'placar-jogo__equipe--placar'
+        gols_elementos = driver.find_elements(By.CLASS_NAME, "placar-jogo__equipe--placar")
+        gol_casa = gols_elementos[0].text.strip() if len(gols_elementos) > 0 else "0"
+        gol_fora = gols_elementos[1].text.strip() if len(gols_elementos) > 1 else "0"
 
-        # 2. BUSCAR GOLS
-        gols = ["0", "0"]
+        # 2. BUSCAR O TEMPO REAL
+        tempo = "Pré-jogo"
         try:
-            # Seleciona apenas os scores que estão dentro do cabeçalho principal
-            scores = driver.find_elements(By.CSS_SELECTOR, ".ScoreCell__Score")
-            if len(scores) >= 2:
-                gols = [s.text.strip() for s in scores[:2]]
+            # O GE usa a classe 'placar-jogo__periodo' para o tempo (ex: 3' 1T, Intervalo, Fim de jogo)
+            tempo_el = driver.find_element(By.CLASS_NAME, "placar-jogo__periodo")
+            if tempo_el.text:
+                tempo = tempo_el.text.replace("\n", " ").strip()
         except:
             pass
 
         # 3. NOMES DOS TIMES
-        time_a, time_b = "São Paulo", "Portuguesa"
+        # No GE: placar-jogo__equipe--nome
+        try:
+            nomes = driver.find_elements(By.CLASS_NAME, "placar-jogo__equipe--nome")
+            time_a = nomes[0].text.strip()
+            time_b = nomes[1].text.strip()
+        except:
+            time_a, time_b = "São Paulo", "Portuguesa"
 
         # MONTAGEM FINAL
-        resultado = f"{time_a} {gols[0]} X {gols[1]} {time_b} | {tempo}"
+        resultado = f"{time_a} {gol_casa} X {gol_fora} {time_b} | {tempo}"
         
         with open("placares.txt", "w", encoding="utf-8") as f:
             f.write(resultado)
             
-        print(f"Capturado: {resultado}")
+        print(f"GE Capturado: {resultado}")
 
     except Exception as e:
-        print(f"Erro: {e}")
+        print(f"Erro no GE: {e}")
     finally:
         driver.quit()
 
 if __name__ == "__main__":
-    buscar_placar()
+    buscar_placar_ge()
