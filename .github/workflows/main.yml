@@ -1,9 +1,9 @@
-name: Monitor de Jogo Ao Vivo
+name: Atualizar Placares AiScore
 
 on:
   schedule:
-    - cron: '*/5 * * * *' # Roda a cada 5 minutos
-  workflow_dispatch: # Permite rodar manualmente
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -12,29 +12,25 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v3
 
-      - name: Configurar Python
+      - name: Instalar Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      - name: Instalar Dependencias
+      - name: Instalar Selenium e Chrome
         run: |
+          python -m pip install --upgrade pip
           pip install selenium webdriver-manager
+          sudo apt-get update
+          sudo apt-get install google-chrome-stable
 
       - name: Executar Scraper
         run: python scraper.py
 
-      - name: Limpeza Automática do GitHub
+      - name: Salvar alterações no GitHub
         run: |
-          # Filtra apenas linhas que contenham 'FAS' E tenham o minuto (') OU 'HT'
-          # O comando 'grep -i' ignora maiúsculas/minúsculas
-          grep -E "FAS.*('|HT)" placares.txt > vivo.txt || echo "Aguardando jogo ao vivo..." > vivo.txt
-          mv vivo.txt placares.txt
-
-      - name: Subir para o Repo
-        run: |
-          git config --global user.name "Bot Placar"
-          git config --global user.email "bot@github.com"
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
           git add placares.txt
-          git commit -m "Placar Atualizado" || exit 0
+          git commit -m "Atualizando placares" || exit 0
           git push
