@@ -24,10 +24,10 @@ jobs:
       - name: Executar Scraper
         run: python scraper.py
 
-      - name: Salvar no GitHub
+      - name: Salvar Alteracoes
         run: |
           git config --global user.name "Bot Placar"
           git config --global user.email "bot@github.com"
           git add placares.txt
-          git commit -m "Atualizacao automatica" || exit 0
+          git commit -m "Placar atualizado" || exit 0
           git push
