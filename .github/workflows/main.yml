@@ -3,10 +3,7 @@ name: Scraper GE Bruto
 on:
   schedule:
     - cron: '*/2 * * * *' # Roda a cada 2 minutos
-  workflow_dispatch:      # Permite rodar manualmente no botão "Run workflow"
-
-permissions:
-  contents: write         # ESSENCIAL: Permite que o bot salve o arquivo no seu GitHub
+  workflow_dispatch:
 
 jobs:
   build:
@@ -20,19 +17,21 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Instalar Dependências
+      - name: Instalar Navegador Chrome
         run: |
-          pip install selenium webdriver-manager
           sudo apt-get update
           sudo apt-get install -y google-chrome-stable
+
+      - name: Instalar Selenium
+        run: pip install selenium webdriver-manager
 
       - name: Executar Scraper
         run: python scraper.py
 
-      - name: Salvar e Subir Resultado
+      - name: Salvar Resultado
         run: |
           git config --global user.name "Bot Extração"
           git config --global user.email "bot@scrap.com"
           git add placares.txt
-          # Só faz o push se houver mudanças no arquivo
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Placar: $(cat placares.txt)" && git push)
+          git commit -m "Update Bruto: $(cat placares.txt)" || exit 0
+          git push
