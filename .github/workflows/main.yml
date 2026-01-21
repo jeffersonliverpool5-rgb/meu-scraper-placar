@@ -1,15 +1,15 @@
-name: Scraper Newcastle Live
+name: Atualizar Placar Ao Vivo
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
-  workflow_dispatch:
+    - cron: '*/5 * * * *'  # Roda automaticamente a cada 5 minutos
+  workflow_dispatch:        # Permite que você rode na mão se quiser
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout do código
         uses: actions/checkout@v3
 
       - name: Configurar Python
@@ -17,16 +17,28 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Instalar Selenium
-        run: pip install selenium webdriver-manager
+      - name: Instalar Selenium e WebDriver
+        run: |
+          pip install selenium webdriver-manager
 
       - name: Executar Scraper
         run: python scraper.py
 
-      - name: Salvar no GitHub
+      - name: Limpeza e Filtro de Placar
         run: |
-          git config --global user.name "Bot Placar"
+          # 1. Filtra linhas que tenham o símbolo de minutos (') ou HT (intervalo)
+          # 2. Garante que pegue Newcastle ou PSV (ou qualquer time no link)
+          # 3. O 'grep -i' faz a busca ignorar maiúsculas/minúsculas
+          grep -E "('|HT)" placares.txt | grep -E "Newcastle|PSV" > vivo.txt || echo "Aguardando atualização de placar..." > vivo.txt
+          
+          # Substitui o arquivo sujo pelo arquivo limpo apenas com o jogo vivo
+          mv vivo.txt placares.txt
+
+      - name: Salvar e Atualizar no GitHub
+        run: |
+          git config --global user.name "Bot Atualizador"
           git config --global user.email "bot@github.com"
           git add placares.txt
-          git commit -m "Newcastle Update: $(cat placares.txt)" || exit 0
+          # O commit só acontece se o placar realmente mudou (evita erros)
+          git commit -m "Placar Atualizado: $(date)" || exit 0
           git push
