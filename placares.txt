@@ -2,15 +2,15 @@
 |
 Sign in
 Football
-21
+20
 Basketball
-13
+12
 AM. Football
 Baseball
 Hockey
-14
+13
 Tennis
-4
+3
 Volleyball
 9
 More
@@ -58,7 +58,7 @@ Ceramica Cleopatra FC
 21 Jan 15:00
 Egyptian Premier League
 Ceramica Cleopatra FC
--
+1 - 0
 Ittihad Alexandria SC
 28 Jan 18:00
 Egyptian Premier League
@@ -75,12 +75,12 @@ Discipline
 Possession%
 Pass%
 Egyptian Premier League
-13
-17
+14
+18
 10
 22
 3
-61.1
+60.6
 0.0
 Egypt League Cup
 6
@@ -107,11 +107,11 @@ Egyptian Super Cup
 55.5
 0.01
 Total / Average :
-22
-6.0
+23
+6.3
 5.0
 9.3 0.8
-56.4
+56.2
 0.0
 Last Match Formations
 El Mokawloon El Arab 1 : 0 Ceramica Cleopatra FC 15 Jan 18:00
@@ -178,35 +178,35 @@ Matches
 Goals(PK)
 1
 Sodiq Ougola
-10
+11
 5(1)
 2
+Amr Al Sulaya
+13
+3
+3
 Marwan Otaka
 13
 2
-3
-Fagrie Lakay
-12
-2
 4
-Amr Al Sulaya
-12
+Fagrie Lakay
+13
 2
 5
 Ragab Nabil
-13
+14
 2
 6
 Islam Issa
-13
+14
 1
 7
-Hussein El Sayed
-10
+Saad Samir
+9
 1
 8
-Saad Samir
-8
+Hussein El Sayed
+11
 1
 Stats
 Add Top players to your website!
@@ -215,9 +215,9 @@ All
 Home
 Away
 Scored
-17
+18
 1
-1
+2
 1
 5
 5
@@ -237,7 +237,7 @@ Conceded
 60‘
 75‘
 90‘
-*Egyptian Premier League Goal distribution from 13 Matches
+*Egyptian Premier League Goal distribution from 14 Matches
 Team Info
 Total players
 37
@@ -252,7 +252,7 @@ Egypt League Cup
 Egyptian Super Cup
 About Ceramica Cleopatra FC
 Ceramica Cleopatra FC live score, schedule, match results and the latest standings. Ceramica Cleopatra FC previous game was against El Mokawloon El Arab in Egypt League Cup on 2026/01/15 UTC, match ended with result 1:0.
-Ceramica Cleopatra FC is going to play their next match on 2026/01/21 UTC against Ittihad Alexandria SC in Egypt League Cup. When the match begin, you will be able to follow Ceramica Cleopatra FC vs Ittihad Alexandria SC live score, H2H, standings, minute by minute updated live results and match statistics.
+Ceramica Cleopatra FC is going to play their next match on 2026/01/28 UTC against Al Masry in Egypt League Cup. When the match begin, you will be able to follow Al Masry vs Ceramica Cleopatra FC live score, H2H, standings, minute by minute updated live results and match statistics.
 Ceramica Cleopatra FC Last Match Lineup
 Ceramica Cleopatra FC last match formations: 4-2-3-1
 Forwards: Sodiq Ougola,Fagrie Lakay,Marwan Otaka,Ahmed Samir,Ayman Moka,Abdulkareem Ayinde Ademola Mumuni,Ahmed Ashraf,
