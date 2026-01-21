@@ -5,7 +5,7 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 
-def extrair_lance_a_lance():
+def extrair_narracao_bruta():
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
@@ -15,41 +15,44 @@ def extrair_lance_a_lance():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
-        # Link do jogo Internacional x Inter-SM
+        # Link do jogo do Internacional no GE
         driver.get("https://ge.globo.com/rs/futebol/campeonato-gaucho/jogo/21-01-2026/internacional-inter-sm.ghtml")
         
-        # Espera o feed de lances carregar
-        time.sleep(25)
+        # Espera o carregamento do conteúdo dinâmico (35 segundos)
+        time.sleep(35)
 
-        # 1. PEGAR O PLACAR E TEMPO (Resumo)
+        # 1. CAPTURA O PLACAR E TEMPO NO TOPO
         try:
-            gols = driver.find_elements(By.CLASS_NAME, "placar-jogo__equipe--placar")
-            tempo_el = driver.find_element(By.CLASS_NAME, "placar-jogo__periodo")
-            placar_resumo = f"INT {gols[0].text} X {gols[1].text} ISM | {tempo_el.text.replace('\n', ' ')}"
+            p_casa = driver.find_element(By.CLASS_NAME, "placar-jogo__equipe--placar").text
+            p_fora = driver.find_elements(By.CLASS_NAME, "placar-jogo__equipe--placar")[1].text
+            tempo = driver.find_element(By.CLASS_NAME, "placar-jogo__periodo").text.replace("\n", " ")
         except:
-            placar_resumo = "Placar indisponível"
+            p_casa, p_fora, tempo = "0", "0", "Ao Vivo"
 
-        # 2. PEGAR O ÚLTIMO LANCE NARRADO
-        # No GE, os lances ficam em itens de feed. Vamos pegar o texto do lance mais recente.
+        # 2. CAPTURA O LANCE MAIS RECENTE (Narração)
+        # O GE usa classes como 'feed-post-body' ou 'tipo-lance'
         try:
-            # Busca o texto do primeiro lance que aparece na lista de tempo real
-            ultimo_lance_el = driver.find_element(By.CSS_SELECTOR, ".feed-post-body, .live-feed__item")
-            texto_lance = ultimo_lance_el.text.replace("\n", " ").strip()
+            # Pega o texto do lance mais recente no topo do feed
+            lances = driver.find_elements(By.CSS_SELECTOR, ".feed-post-body, .live-feed__item, .content-publication")
+            ultimo_lance = lances[0].text.replace("\n", " ").strip() if lances else "Sem comentários recentes."
         except:
-            texto_lance = "Aguardando novos lances..."
+            ultimo_lance = "Não foi possível carregar a narração."
 
-        # MONTAGEM FINAL DO TEXTO BRUTO
-        resultado = f"{placar_resumo}\nLANCE: {texto_lance}"
+        # FORMATAÇÃO DO RESULTADO BRUTO
+        resumo = f"INTERNACIONAL {p_casa} X {p_fora} INTER-SM | {tempo}"
+        comentario = f"LANCE: {ultimo_lance}"
         
+        final = f"{resumo}\n{comentario}"
+
         with open("placares.txt", "w", encoding="utf-8") as f:
-            f.write(resultado)
+            f.write(final)
             
-        print(f"Dados Capturados:\n{resultado}")
+        print(f"Dados salvos:\n{final}")
 
     except Exception as e:
-        print(f"Erro: {e}")
+        print(f"Erro no Scraper: {e}")
     finally:
         driver.quit()
 
 if __name__ == "__main__":
-    extrair_lance_a_lance()
+    extrair_narracao_bruta()
