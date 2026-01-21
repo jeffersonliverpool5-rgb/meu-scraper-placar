@@ -3,7 +3,7 @@ name: Scraper Live ESPN
 on:
   schedule:
     - cron: '*/5 * * * *' # Roda a cada 5 minutos
-  workflow_dispatch:      # Permite rodar manualmente pelo botão
+  workflow_dispatch:      # Permite rodar manualmente
 
 jobs:
   build:
@@ -22,26 +22,28 @@ jobs:
         run: |
           pip install selenium webdriver-manager
 
-      - name: Executar Scraper (Texto Bruto)
+      - name: Executar Scraper
         run: python scraper.py
 
-      - name: Filtro de Limpeza Real Time
+      - name: Filtro de Contexto Live
         run: |
-          # 1. Pega as primeiras 60 linhas (onde fica o placar na ESPN)
+          # 1. Pega o topo do texto bruto
           head -n 60 placares.txt > topo.txt
           
-          # 2. Procura pelos times ou indicadores de jogo rolando (', HT, -, Final)
-          # O grep -i ignora maiúsculas/minúsculas
-          grep -Ei "Real Madrid|Al-Hilal|Al Hilal|[0-9] - [0-9]|'|HT|FIM|FINAL" topo.txt > linhas_jogo.txt || echo "Jogo não localizado no topo" > linhas_jogo.txt
+          # 2. BUSCA O MINUTO OU INTERVALO E PEGA O CONTEXTO (Times e Placar)
+          # O -C 4 pega 4 linhas em volta do minuto para garantir os nomes dos times
+          grep -C 4 -Ei "'|HT|FIM|FINAL|[0-9] - [0-9]" topo.txt > linhas_vivas.txt || echo "Jogo ainda nao iniciou" > linhas_vivas.txt
           
-          # 3. Limpa palavras de menu que costumam vir junto
-          grep -vE "Assinar|Entrar|ESPN|Resultados|Futebol|Calendário|Equipes" linhas_jogo.txt > placares_limpo.txt
+          # 3. Limpa botões de menu da ESPN que poluem o arquivo
+          grep -vE "Assinar|Entrar|Vídeo|Pesquisar|Resultados|Futebol|Calendário" linhas_vivas.txt > placares_limpo.txt
           
-          # 4. Se o arquivo estiver vazio após a limpeza, avisa
-          if [ ! -s placares_limpo.txt ]; then
-            echo "Aguardando dados da partida..." > placares.txt
+          # 4. Finaliza o arquivo (remove linhas vazias extras)
+          sed '/^[[:space:]]*$/d' placares_limpo.txt > final.txt
+          
+          if [ ! -s final.txt ]; then
+            echo "Aguardando cronometro aparecer..." > placares.txt
           else
-            mv placares_limpo.txt placares.txt
+            mv final.txt placares.txt
           fi
 
       - name: Salvar no GitHub
@@ -49,5 +51,5 @@ jobs:
           git config --global user.name "GitHub Action Bot"
           git config --global user.email "action@github.com"
           git add placares.txt
-          git commit -m "Live Update: $(date +'%d/%m %H:%M')" || exit 0
+          git commit -m "Live Update: $(date +'%H:%M')" || exit 0
           git push
