@@ -1,36 +1,42 @@
-name: Atualizar Placares AiScore
+name: Scraper ESPN Champions
 
 on:
   schedule:
-    - cron: '*/30 * * * *'
-  workflow_dispatch:
+    - cron: '*/10 * * * *' # Roda automaticamente a cada 10 minutos
+  workflow_dispatch:      # Permite que você rode manualmente pelo botão "Run workflow"
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout do código
         uses: actions/checkout@v3
 
-      - name: Instalar Python
+      - name: Configurar Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      - name: Instalar Selenium e Chrome
+      - name: Instalar Dependências
         run: |
-          python -m pip install --upgrade pip
           pip install selenium webdriver-manager
-          sudo apt-get update
-          sudo apt-get install google-chrome-stable
 
-      - name: Executar Scraper
+      - name: Executar Scraper ESPN
         run: python scraper.py
 
-      - name: Salvar alterações no GitHub
+      - name: Limpeza de Dados (Filtro GitHub)
         run: |
-          git config --global user.name "GitHub Action"
+          # Este comando limpa o arquivo placares.txt gerado pelo seu código.
+          # Ele mantém apenas as linhas que possuem o caractere "-" (placares)
+          # e remove linhas que contenham palavras de menu como "ESPN" ou "Futebol".
+          grep "-" placares.txt | grep -v "ESPN" | grep -v "Futebol" > placares_limpo.txt || echo "Sem jogos no momento" > placares_limpo.txt
+          mv placares_limpo.txt placares.txt
+
+      - name: Salvar no Repositório
+        run: |
+          git config --global user.name "GitHub Action Bot"
           git config --global user.email "action@github.com"
           git add placares.txt
-          git commit -m "Atualizando placares" || exit 0
+          git commit -m "Placar Champions Atualizado: $(date)" || exit 0
           git push
