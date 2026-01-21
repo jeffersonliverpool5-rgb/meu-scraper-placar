@@ -18,7 +18,7 @@ def buscar_ceramica_cleopatra_ao_vivo():
     
     try:
         # Link do Ceramica Cleopatra FC
-        driver.get("https://www.aiscore.com/team-ceramica-cleopatra-fc/ndkz6i99r6teq3z")
+        driver.get("https://www.aiscore.com/match-makedonikos-u19-iraklis-1908-fc-u19/wv78xiv8jnlaokr")
         time.sleep(45) 
 
         elementos = driver.find_elements(By.CLASS_NAME, "match-item")
