@@ -19,38 +19,41 @@ def buscar_placar_exato():
         # LINK DO JOGO NEWCASTLE X PSV
         driver.get("https://www.espn.com.br/futebol/partida/_/jogoId/757778")
         
-        # Espera para carregar os elementos dinâmicos
+        # Espera o carregamento dos elementos dinâmicos
         time.sleep(30) 
 
         TIME_A = "Newcastle"
         TIME_B = "PSV"
 
-        # 1. BUSCA O TEMPO
+        # 1. BUSCA O TEMPO (MINUTO)
         tempo = "Início"
         try:
-            # Seletores atualizados para o tempo
+            # Tenta localizar o tempo pela nova classe da ESPN
             tempo_el = driver.find_element(By.CSS_SELECTOR, ".GameStatus__Text, .game-time, .status-detail")
             if tempo_el.text:
                 tempo = tempo_el.text.strip()
         except:
             texto_bruto = driver.find_element(By.TAG_NAME, "body").text
-            minutos = re.findall(r"\d+'|HT|Intervalo|Fim|FIM", texto_bruto)
+            minutos = re.findall(r"\d+'\+\d+'|\d+'|HT|Intervalo|Fim", texto_bruto)
             if minutos: tempo = minutos[0]
 
-        # 2. BUSCA OS GOLS (PLACAR) - AJUSTADO PARA AS NOVAS CLASSES DA ESPN
+        # 2. BUSCA OS GOLS (PLACAR) - AJUSTADO PARA PEGAR O 2 X 0 DA FOTO
         gols = ["0", "0"]
         try:
-            # A ESPN agora usa frequentemente a classe 'DetailView__Score' ou 'score' dentro de spans
-            scores = driver.find_elements(By.CSS_SELECTOR, ".DetailView__Score, .score")
-            if len(scores) >= 2:
-                temp_gols = [s.text.strip() for s in scores if s.text.strip().isdigit()]
-                if len(temp_gols) >= 2:
-                    gols = temp_gols
+            # Na foto, o placar fica dentro de classes como 'score-container' ou 'ScoreCell__Score'
+            # Este seletor busca as classes de score mais comuns da ESPN atual
+            elementos_score = driver.find_elements(By.CSS_SELECTOR, ".ScoreCell__Score, .score-container, .DetailView__Score")
+            
+            placar_encontrado = [e.text.strip() for e in elementos_score if e.text.strip().isdigit()]
+            
+            if len(placar_encontrado) >= 2:
+                gols = placar_encontrado[:2]
         except:
             pass
 
-        gol_casa = gols[0] if len(gols) >= 1 else "0"
-        gol_fora = gols[1] if len(gols) >= 2 else "0"
+        # MONTAGEM FINAL
+        gol_casa = gols[0]
+        gol_fora = gols[1]
 
         resultado = f"{TIME_A} {gol_casa} X {gol_fora} {TIME_B} | {tempo}"
 
