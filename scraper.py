@@ -16,7 +16,7 @@ def buscar_espn_viva():
     
     try:
         print("Acessando partida na ESPN...")
-        driver.get("https://www.espn.com.br/futebol/partida/_/jogoId/757771")
+        driver.get("https://www.espn.com.br/futebol/partida/_/jogoId/757770")
         
         # Espera o site carregar
         time.sleep(30)
