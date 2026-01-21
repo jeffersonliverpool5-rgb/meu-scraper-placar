@@ -1,8 +1,8 @@
-name: Scraper GE Paulistão
+name: Scraper GE Live
 
 on:
   schedule:
-    - cron: '*/2 * * * *' # Roda a cada 2 minutos para o GE
+    - cron: '*/2 * * * *' # Roda a cada 2 minutos
   workflow_dispatch:
 
 jobs:
@@ -17,21 +17,21 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Instalar Google Chrome
+      - name: Instalar Chrome
         run: |
           sudo apt-get update
           sudo apt-get install -y google-chrome-stable
 
-      - name: Instalar Dependências
+      - name: Instalar Selenium
         run: pip install selenium webdriver-manager
 
-      - name: Executar Scraper
+      - name: Rodar Scraper
         run: python scraper.py
 
-      - name: Salvar no GitHub
+      - name: Enviar para o Repositório
         run: |
           git config --global user.name "Bot GE"
-          git config --global user.email "bot@github.com"
+          git config --global user.email "bot@ge.com"
           git add placares.txt
-          git commit -m "GE Update: $(cat placares.txt)" || exit 0
+          git commit -m "Placar Atualizado: $(cat placares.txt)" || exit 0
           git push
