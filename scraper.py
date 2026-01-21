@@ -17,7 +17,7 @@ def buscar_placar_exato():
     
     try:
         # LINK DO JOGO NEWCASTLE X PSV
-        driver.get("https://www.espn.com.br/futebol/partida/_/jogoId/757777")
+        driver.get("https://www.espn.com.br/futebol/partida/_/jogoId/757778")
         
         # Espera o site carregar os números ao vivo
         time.sleep(45) 
