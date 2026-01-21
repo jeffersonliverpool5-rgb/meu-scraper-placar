@@ -18,7 +18,7 @@ def buscar_jogo_reserves_ao_vivo():
     
     # --- CONFIGURAÇÃO PARA O NOVO LINK ---
     TIME_ALVO = "FAS" 
-    LINK = "https://www.aiscore.com/team-cd-fas-reserves/edq09ip2z4i4qxg"
+    LINK = "https://www.aiscore.com/match-cd-hercules-reserves-cd-fas-reserves/o17pjiojp92hy7j"
     # -------------------------------------
 
     try:
