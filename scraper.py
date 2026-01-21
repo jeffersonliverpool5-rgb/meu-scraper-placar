@@ -18,38 +18,33 @@ def buscar_placares_detalhados():
     try:
         print("Coletando placares detalhados...")
         driver.get("https://www.aiscore.com/live")
-        time.sleep(25) # Tempo essencial para carregar os números dos gols
+        time.sleep(30) 
 
-        # O AiScore organiza os dados em classes específicas para nomes e scores
-        # Vamos tentar capturar os blocos de jogo completos
         jogos = driver.find_elements(By.CLASS_NAME, "match-item")
         
         with open("placares.txt", "w", encoding="utf-8") as f:
             if not jogos:
-                # Se a classe mudar, ele tenta pegar pelo seletor de texto que funcionou antes
-                corpo = driver.find_element(By.TAG_NAME, "body").text
-                f.write(corpo)
+                f.write("Nenhum jogo encontrado no momento.")
             else:
                 for jogo in jogos:
                     try:
-                        # Tenta extrair cada parte separadamente
                         casa = jogo.find_element(By.CLASS_NAME, "home-name").text
                         fora = jogo.find_element(By.CLASS_NAME, "away-name").text
                         
-                        # Tenta pegar o score. Se não achar, tenta a classe geral de placar
                         try:
-                            score = jogo.find_element(By.CLASS_NAME, "score").text
+                            score_bruto = jogo.find_element(By.CLASS_NAME, "score").text
+                            # Correção do erro da barra invertida:
+                            score_limpo = score_bruto.replace('\n', '-')
                         except:
-                            score = "vs" # Caso o jogo ainda não tenha começado
+                            score_limpo = "vs"
                         
-                        linha = f"{casa} {score.replace('\n', '-')} {fora}"
-                        f.write(linha + "\n")
-                        print(f"Salvo: {linha}")
+                        resultado = f"{casa} {score_limpo} {fora}"
+                        f.write(resultado + "\n")
+                        print(f"Salvo: {resultado}")
                     except:
-                        # Se falhar em um jogo, tenta pegar o texto bruto do bloco
-                        f.write(jogo.text.replace("\n", " ") + "\n")
+                        continue
 
-        print("Atualização concluída com sucesso!")
+        print("Atualização concluída!")
 
     except Exception as e:
         print(f"Erro: {e}")
