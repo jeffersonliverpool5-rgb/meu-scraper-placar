@@ -1,11 +1,12 @@
 import time
+import re
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 
-def extrair_narracao_bruta():
+def extrair_na_marra():
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
@@ -15,44 +16,54 @@ def extrair_narracao_bruta():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
-        # Link do jogo do Internacional no GE
         driver.get("https://ge.globo.com/rs/futebol/campeonato-gaucho/jogo/21-01-2026/internacional-inter-sm.ghtml")
         
-        # Espera o carregamento do conteúdo dinâmico (35 segundos)
-        time.sleep(35)
+        # Espera o carregamento total (aumentado para 40s)
+        time.sleep(40)
 
-        # 1. CAPTURA O PLACAR E TEMPO NO TOPO
+        # 1. Pega os nomes e placar pelos seletores mais básicos do GE
         try:
-            p_casa = driver.find_element(By.CLASS_NAME, "placar-jogo__equipe--placar").text
-            p_fora = driver.find_elements(By.CLASS_NAME, "placar-jogo__equipe--placar")[1].text
-            tempo = driver.find_element(By.CLASS_NAME, "placar-jogo__periodo").text.replace("\n", " ")
+            placar_bruto = driver.find_elements(By.CLASS_NAME, "placar-jogo__equipe--placar")
+            g1 = placar_bruto[0].text.strip()
+            g2 = placar_bruto[1].text.strip()
         except:
-            p_casa, p_fora, tempo = "0", "0", "Ao Vivo"
+            g1, g2 = "0", "0"
 
-        # 2. CAPTURA O LANCE MAIS RECENTE (Narração)
-        # O GE usa classes como 'feed-post-body' ou 'tipo-lance'
-        try:
-            # Pega o texto do lance mais recente no topo do feed
-            lances = driver.find_elements(By.CSS_SELECTOR, ".feed-post-body, .live-feed__item, .content-publication")
-            ultimo_lance = lances[0].text.replace("\n", " ").strip() if lances else "Sem comentários recentes."
-        except:
-            ultimo_lance = "Não foi possível carregar a narração."
-
-        # FORMATAÇÃO DO RESULTADO BRUTO
-        resumo = f"INTERNACIONAL {p_casa} X {p_fora} INTER-SM | {tempo}"
-        comentario = f"LANCE: {ultimo_lance}"
+        # 2. BUSCA DO TEMPO (A "MERDA" QUE VAMOS TIRAR)
+        # Se não achar o tempo específico, ele vai varrer a página atrás de algo como "28:23" ou "30'"
+        tempo_final = "Andamento"
         
-        final = f"{resumo}\n{comentario}"
+        # Pega todo o texto da página
+        todo_texto = driver.find_element(By.TAG_NAME, "body").text
+        
+        # Procura o padrão de tempo (ex: 28:23 1T ou apenas 28:23)
+        match = re.search(r"(\d{1,2}:\d{2}(\s[12]T)?)|(\d{1,2}')", todo_texto)
+        
+        if match:
+            tempo_final = match.group(0)
+        else:
+            # Se ainda assim não achar, tenta pegar o texto do elemento de período do GE
+            try:
+                tempo_final = driver.find_element(By.CLASS_NAME, "placar-jogo__periodo").text.replace("\n", " ")
+            except:
+                tempo_final = "Ao Vivo"
+
+        # MONTAGEM DA LINHA ÚNICA
+        resultado = f"INT {g1} X {g2} ISM | {tempo_final}"
+        
+        # Limpa qualquer quebra de linha indesejada
+        resultado = resultado.replace("\n", "").strip()
 
         with open("placares.txt", "w", encoding="utf-8") as f:
-            f.write(final)
+            f.write(resultado)
             
-        print(f"Dados salvos:\n{final}")
+        print(f"DEBUG TEXTO COMPLETO: {resultado}")
 
     except Exception as e:
-        print(f"Erro no Scraper: {e}")
+        with open("placares.txt", "w", encoding="utf-8") as f:
+            f.write(f"INT 0 X 0 ISM | Erro na Captura")
     finally:
         driver.quit()
 
 if __name__ == "__main__":
-    extrair_narracao_bruta()
+    extrair_na_marra()
