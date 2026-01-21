@@ -19,7 +19,7 @@ def buscar_jogos_limpos():
     try:
         print("Acessando AiScore...")
         # Usando o link do time que você quer monitorar
-        driver.get("https://www.aiscore.com/team-ceramica-cleopatra-fc/ndkz6i99r6teq3z")
+        driver.get("https://www.aiscore.com/team-iraklis-1908-fc-u19/ndqmli055ncgkve")
         
         time.sleep(45) 
 
