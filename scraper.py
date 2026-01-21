@@ -5,8 +5,10 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
-def buscar_placar_infalivel():
+def buscar_placar_real():
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
@@ -16,64 +18,56 @@ def buscar_placar_infalivel():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
-        # LINK DO JOGO
         driver.get("https://www.espn.com.br/futebol/partida/_/jogoId/757771")
-        time.sleep(35) # Espera generosa para carregar tudo
         
-        # --- 1. BUSCA O TEMPO (MINUTOS) ---
-        # Tenta todas as variações de nomes que a ESPN usa
-        tempo = ""
-        seletores_tempo = [
-            ".game-time", ".status-detail", ".time", 
-            ".Gamestrip__Time", ".Gamestrip__Status"
-        ]
-        for seletor in seletores_tempo:
-            try:
-                el = driver.find_element(By.CSS_SELECTOR, seletor)
-                if el.text.strip():
-                    tempo = el.text.strip()
-                    break
-            except:
-                continue
+        # ESPERA ATÉ 40 SEGUNDOS para o placar ou tempo aparecer
+        wait = WebDriverWait(driver, 40)
         
-        # Se falhou nos seletores, tenta achar um número com ' no texto bruto
-        if not tempo:
-            texto_bruto = driver.find_element(By.TAG_NAME, "body").text
-            busca_minuto = re.findall(r"\d+'|HT|Intervalo|Fim", texto_todo)
-            tempo = busca_minuto[0] if busca_minuto else "Ao Vivo"
+        # Tenta localizar o bloco principal do placar
+        wait.until(EC.presence_of_element_located((By.CLASS_NAME, "Gamestrip")))
+        
+        # Dá um tempinho extra para os números carregarem dentro do bloco
+        time.sleep(10)
 
-        # --- 2. BUSCA O PLACAR (GOLS) ---
-        gol_casa, gol_fora = "0", "0"
-        # Tenta buscar pelas classes de score
-        try:
-            # Seletores comuns de placar na ESPN
-            scores = driver.find_elements(By.CSS_SELECTOR, ".score, .Gamestrip__Score, .score-container")
-            if len(scores) >= 2:
-                gol_casa = scores[0].text.strip()
-                gol_fora = scores[1].text.strip()
-            else:
-                # Se falhou, tenta buscar números grandes dentro do cabeçalho
-                header = driver.find_element(By.CLASS_NAME, "Gamestrip")
-                numeros = re.findall(r"\b\d\b", header.text)
-                if len(numeros) >= 2:
-                    gol_casa, gol_fora = numeros[0], numeros[1]
-        except:
-            pass
+        # PEGA O TEXTO DO BLOCO DO PLACAR
+        bloco_placar = driver.find_element(By.CLASS_NAME, "Gamestrip").text
+        linhas = bloco_placar.split('\n')
 
-        # --- NOMES DOS TIMES ---
+        # --- FILTRAGEM ---
+        gols = []
+        tempo = "Ao Vivo"
+        
+        for item in linhas:
+            item = item.strip()
+            # Procura o tempo (ex: 85', HT, Fim)
+            if "'" in item or "HT" in item or "Fim" in item or "Intervalo" in item:
+                tempo = item
+            # Procura os gols (apenas números de 0 a 20)
+            elif item.isdigit() and len(item) <= 2:
+                gols.append(item)
+
+        # Se não achou gols no bloco, tenta no body inteiro como última chance
+        if len(gols) < 2:
+            texto_total = driver.find_element(By.TAG_NAME, "body").text
+            gols = re.findall(r"\b\d\b", texto_total)[:2]
+
         TIME_A = "Galatasaray"
         TIME_B = "Atlético Madrid"
+
+        # Garante que temos dois números para o placar
+        gol_casa = gols[0] if len(gols) >= 1 else "0"
+        gol_fora = gols[1] if len(gols) >= 2 else "0"
 
         resultado = f"{TIME_A} {gol_casa} X {gol_fora} {TIME_B} | {tempo}"
 
         with open("placares.txt", "w", encoding="utf-8") as f:
             f.write(resultado)
-            print(f"Resultado: {resultado}")
+            print(f"Capturado com sucesso: {resultado}")
 
     except Exception as e:
-        print(f"Erro: {e}")
+        print(f"Erro no carregamento: {e}")
     finally:
         driver.quit()
 
 if __name__ == "__main__":
-    buscar_placar_infalivel()
+    buscar_placar_real()
