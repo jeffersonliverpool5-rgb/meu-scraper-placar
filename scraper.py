@@ -11,54 +11,55 @@ def buscar_placar_exato():
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    # User-agent mais atualizado para evitar que o site entregue uma página antiga
-    options.add_argument("user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
     
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
-        # Forçamos o link com um parâmetro de tempo para evitar cache do navegador
-        driver.get(f"https://www.espn.com.br/futebol/partida/_/jogoId/757777?refresh={int(time.time())}")
+        # LINK DO JOGO NEWCASTLE X PSV
+        driver.get("https://www.espn.com.br/futebol/partida/_/jogoId/757778")
         
-        # Espera o tempo necessário para o placar "subir" na tela
-        time.sleep(30) 
+        # Espera o site carregar os números ao vivo
+        time.sleep(45) 
 
+        # NOMES DOS TIMES (COMO VOCÊ QUERIA)
         TIME_A = "Newcastle"
         TIME_B = "PSV"
 
-        # 1. BUSCA O TEMPO
+        # 1. BUSCA O TEMPO (MINUTO)
         tempo = "Início"
         try:
-            # Tenta pegar o tempo exato que aparece entre os placares
-            tempo_el = driver.find_element(By.CSS_SELECTOR, ".GameStatus__Text, .status-detail, .game-time")
+            tempo_el = driver.find_element(By.CSS_SELECTOR, ".GameStatus__Text, .game-time, .status-detail")
             if tempo_el.text:
                 tempo = tempo_el.text.strip()
         except:
-            pass
+            texto_bruto = driver.find_element(By.TAG_NAME, "body").text
+            minutos = re.findall(r"\d+'|HT|Intervalo|Fim", texto_bruto)
+            if minutos: tempo = minutos[0]
 
-        # 2. BUSCA OS GOLS (PLACAR REAL)
-        # Seletor focado na estrutura da Gamestrip (a barra principal da sua foto)
+        # 2. BUSCA OS GOLS (PLACAR AO VIVO)
         gols = ["0", "0"]
         try:
-            # A ESPN coloca os gols em elementos com a classe 'ScoreCell__Score' 
-            # ou dentro de 'div.score-container'. Vamos pegar todos os que forem números.
-            elementos = driver.find_elements(By.CSS_SELECTOR, "div.ScoreCell__Score, span.ScoreCell__Score, .score-container")
+            # Esse seletor pega os números grandes que aparecem na sua foto
+            scores = driver.find_elements(By.CSS_SELECTOR, ".ScoreCell__Score")
             
-            # Filtramos apenas o que é número puro
-            valores = [e.text.strip() for e in elementos if e.text.strip().isdigit()]
-            
-            if len(valores) >= 2:
-                # Pegamos os dois primeiros números encontrados na parte superior
-                gols = valores[:2]
+            if len(scores) >= 2:
+                # Pega apenas o texto e ignora se não for número
+                placar_ao_vivo = [s.text.strip() for s in scores if s.text.strip().isdigit()]
+                if len(placar_ao_vivo) >= 2:
+                    gols = placar_ao_vivo[:2]
         except:
             pass
 
-        resultado = f"{TIME_A} {gols[0]} X {gols[1]} {TIME_B} | {tempo}"
+        # MONTAGEM FINAL
+        gol_casa = gols[0]
+        gol_fora = gols[1]
 
-        # Grava o arquivo
+        resultado = f"{TIME_A} {gol_casa} X {gol_fora} {TIME_B} | {tempo}"
+
         with open("placares.txt", "w", encoding="utf-8") as f:
             f.write(resultado)
-            print(f"ATUALIZADO: {resultado}")
+            print(f"Gravado: {resultado}")
 
     except Exception as e:
         print(f"Erro: {e}")
