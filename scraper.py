@@ -7,7 +7,7 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 
-def buscar_jogo_ao_vivo_certeiro():
+def buscar_jogo_reserves_ao_vivo():
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
@@ -16,17 +16,19 @@ def buscar_jogo_ao_vivo_certeiro():
     
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
-    # --- CONFIGURAÇÃO ---
-    TIME_ALVO = "Ceramica" 
-    LINK = "https://www.aiscore.com/team-ceramica-cleopatra-fc/ndkz6i99r6teq3z"
-    # --------------------
+    # --- CONFIGURAÇÃO PARA O NOVO LINK ---
+    TIME_ALVO = "FAS" 
+    LINK = "https://www.aiscore.com/team-cd-fas-reserves/edq09ip2z4i4qxg"
+    # -------------------------------------
 
     try:
-        print(f"Buscando jogo AO VIVO: {TIME_ALVO}")
+        print(f"Acessando AiScore para buscar jogo AO VIVO de: {TIME_ALVO}...")
         driver.get(LINK)
+        
+        # Espera os 45 segundos que você validou para carregar tudo
         time.sleep(45) 
 
-        # Usa o XPATH que você validou que pega tudo
+        # O seu XPATH que nunca falha para pegar todos os blocos
         elementos = driver.find_elements(By.XPATH, "//div[contains(@class, 'match')] | //div[contains(@class, 'item')]")
         
         linha_viva = ""
@@ -34,27 +36,31 @@ def buscar_jogo_ao_vivo_certeiro():
         for el in elementos:
             texto = el.text.strip().replace("\n", " ")
             
-            # FILTRO: Nome do time + (Minutagem ou HT)
-            # Isso garante que pegue 1º tempo, 2º tempo e intervalo
+            # REGRA PARA O JOGO AO VIVO:
+            # 1. Tem que ter "FAS" (o nome do seu time)
+            # 2. Tem que ter o símbolo de minuto (') ou "HT" (1º tempo, intervalo ou 2º tempo)
             if TIME_ALVO in texto and (re.search(r"\d+'", texto) or "HT" in texto):
                 linha_viva = texto
-                break 
+                break # Achou o jogo que está acontecendo AGORA, para de ler
 
         with open("placares.txt", "w", encoding="utf-8") as f:
             if linha_viva:
-                # Limpa a linha tirando o excesso de espaços
-                resultado = " ".join(linha_viva.split())
-                f.write(resultado + "\n")
-                print(f"CAPTURADO: {resultado}")
+                # Limpa a linha de lixo (tira o nome da liga e datas)
+                limpa = linha_viva.replace("El Salvador Reserva League", "")
+                limpa = re.sub(r'\d+\s+[a-zA-Z]+\s+\d{2}:\d{2}', '', limpa)
+                
+                # Salva apenas a linha limpa com o jogo ao vivo
+                resultado_final = " ".join(limpa.split())
+                f.write(resultado_final + "\n")
+                print(f"CAPTURADO AO VIVO: {resultado_final}")
             else:
-                f.write(f"Aguardando o inicio do jogo ou intervalo do {TIME_ALVO}...\n")
-
-        print("Finalizado.")
+                # Se não tiver cronômetro rodando, o arquivo avisa
+                f.write(f"Nenhum jogo do {TIME_ALVO} Reserves ao vivo agora.\n")
 
     except Exception as e:
-        print(f"Erro: {e}")
+        print(f"Erro fatal: {e}")
     finally:
         driver.quit()
 
 if __name__ == "__main__":
-    buscar_jogo_ao_vivo_certeiro()
+    buscar_jogo_reserves_ao_vivo()
