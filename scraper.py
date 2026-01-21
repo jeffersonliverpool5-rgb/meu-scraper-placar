@@ -16,7 +16,7 @@ def extrair_na_marra():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
-        driver.get("https://ge.globo.com/sp/futebol/campeonato-paulista/jogo/21-01-2026/sao-paulo-portuguesa.ghtml")
+        driver.get("https://ge.globo.com/rs/futebol/campeonato-gaucho/jogo/21-01-2026/internacional-inter-sm.ghtml")
         
         # Espera o carregamento total (aumentado para 40s)
         time.sleep(40)
@@ -49,7 +49,7 @@ def extrair_na_marra():
                 tempo_final = "Ao Vivo"
 
         # MONTAGEM DA LINHA ÚNICA
-        resultado = f"SAO {g1} X {g2} POR | {tempo_final}"
+        resultado = f"INT {g1} X {g2} ISM | {tempo_final}"
         
         # Limpa qualquer quebra de linha indesejada
         resultado = resultado.replace("\n", "").strip()
@@ -61,7 +61,7 @@ def extrair_na_marra():
 
     except Exception as e:
         with open("placares.txt", "w", encoding="utf-8") as f:
-            f.write(f"SAO 0 X 0 POR | Erro na Captura")
+            f.write(f"INT 0 X 0 ISM | Erro na Captura")
     finally:
         driver.quit()
 
