@@ -6,7 +6,7 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 
-def buscar_organizado_certeiro():
+def buscar_focado():
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
@@ -16,48 +16,49 @@ def buscar_organizado_certeiro():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
-        # COLOQUE O LINK DO JOGO AQUI
+        # LINK DO JOGO
         driver.get("https://www.espn.com.br/futebol/partida/_/jogoId/757771")
         time.sleep(30)
         
-        # 1. PEGA OS NOMES DOS CLUBES PELAS CLASSES DA ESPN
-        # A ESPN usa 'short-name' ou 'long-name' para os times no placar
-        times_elementos = driver.find_elements(By.CLASS_NAME, "Table__Team") or \
-                          driver.find_elements(By.CLASS_NAME, "long-name") or \
-                          driver.find_elements(By.CLASS_NAME, "short-name")
-        
-        times = [t.text.strip() for t in times_elementos if t.text.strip() and len(t.text) > 2]
-        # Limpa nomes repetidos e pega os dois primeiros
-        times = list(dict.fromkeys(times))[:2]
+        # FOCO TOTAL: Pega o container do placar (Gamestrip / Competitors)
+        # Esse bloco contém apenas os dois times, o placar e o tempo.
+        try:
+            placar_focado = driver.find_element(By.CSS_SELECTOR, ".competitors, .Gamestrip, .Gamestrip__Overview")
+            texto_bruto = placar_focado.text.split('\n')
+        except:
+            # Caso o CSS mude, pega o topo do body mas filtra mais pesado
+            texto_bruto = driver.find_element(By.TAG_NAME, "body").text.split('\n')[:40]
 
-        # 2. PEGA O PLACAR E O TEMPO PELO TEXTO BRUTO (REDE DE ARRASTÃO)
-        texto = driver.find_element(By.TAG_NAME, "body").text.split('\n')[:60]
-        placar = []
-        tempo = ""
+        # Limpeza seletiva
+        lixo = ["O Melhor", "Champions", "NBA", "Paulista", "Copinha", "Vídeo", "Menu", "Resultados", "Futebol"]
+        dados_bons = [linha for linha in texto_bruto if not any(palavra in linha for palavra in lixo) and len(linha.strip()) > 0]
 
-        for linha in texto:
-            linha = linha.strip()
-            # Identifica o tempo (Ex: 45', HT, Intervalo, Fim)
-            if "'" in linha or "HT" in linha or "Intervalo" in linha or "Fim" in linha or "FIM" in linha:
-                if not tempo: # Pega o primeiro que aparecer
-                    tempo = linha
-            # Identifica o placar (Números isolados de 0 a 9)
-            elif re.match(r"^[0-9]$", linha):
-                if len(placar) < 2:
-                    placar.append(linha)
+        times = []
+        gols = []
+        tempo = "Aguardando..."
 
-        # MONTA A LINHA FINAL
-        if len(times) >= 2 and len(placar) >= 2:
-            linha_final = f"{times[0]} {placar[0]} - {placar[1]} {times[1]} | {tempo}"
+        for item in dados_bons:
+            # 1. Minuto ou Status
+            if "'" in item or "HT" in item or "Fim" in item or "Intervalo" in item:
+                tempo = item
+            # 2. Placar (Números sozinhos)
+            elif re.match(r"^[0-9]+$", item) and len(item) <= 2:
+                gols.append(item)
+            # 3. Nomes dos Times (Geralmente são palavras maiores que 2 letras)
+            elif len(item) > 2 and len(times) < 2:
+                times.append(item)
+
+        # MONTAGEM DA LINHA
+        if len(times) >= 2 and len(gols) >= 2:
+            resultado = f"{times[0]} {gols[0]} - {gols[1]} {times[1]} | {tempo}"
         elif len(times) >= 2:
-            linha_final = f"{times[0]} vs {times[1]} | {tempo}"
+            resultado = f"{times[0]} vs {times[1]} | {tempo}"
         else:
-            # Fallback caso os nomes falhem: pega as primeiras linhas úteis
-            linha_final = " ".join(texto[:5])
+            resultado = "Dados do placar não encontrados no momento."
 
         with open("placares.txt", "w", encoding="utf-8") as f:
-            f.write(linha_final)
-            print(f"Resultado: {linha_final}")
+            f.write(resultado)
+            print(f"Capturado: {resultado}")
 
     except Exception as e:
         print(f"Erro: {e}")
@@ -65,4 +66,4 @@ def buscar_organizado_certeiro():
         driver.quit()
 
 if __name__ == "__main__":
-    buscar_organizado_certeiro()
+    buscar_focado()
