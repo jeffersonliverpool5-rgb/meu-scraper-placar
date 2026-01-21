@@ -18,7 +18,7 @@ def buscar_jogos_espn():
     try:
         print("Acessando ESPN Resultados...")
         # Link da Champions League que você pediu
-        driver.get("https://www.espn.com.br/futebol/resultados?liga=UEFA.CHAMPIONS")
+        driver.get("https://www.espn.com.br/futebol/partida/_/jogoId/757771")
         
         # Espera para carregar os resultados dinâmicos
         time.sleep(30) 
