@@ -1,15 +1,12 @@
 import time
 import re
-import os
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
-def buscar_placar_espn():
+def buscar_placar():
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
@@ -19,52 +16,58 @@ def buscar_placar_espn():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
-        # LINK ENVIADO: São Paulo x Portuguesa
+        # URL do jogo São Paulo x Portuguesa
         driver.get("https://www.espn.com.br/futebol/partida/_/jogoId/762098")
         
-        # Espera até 20 segundos para os elementos de score aparecerem
-        wait = WebDriverWait(driver, 20)
-        
-        # 1. CAPTURA OS GOLS (PLACAR)
-        # A ESPN usa classes como 'detailScore' ou 'ScoreCell__Score'
-        try:
-            wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".detailScore__wrapper")))
-            scores = driver.find_elements(By.CSS_SELECTOR, ".detailScore__wrapper > span")
-            # Filtra apenas os números
-            gols = [s.text.strip() for s in scores if s.text.strip().isdigit()]
-        except:
-            gols = ["0", "0"]
+        # Tempo de espera para garantir que o JavaScript carregue os números
+        time.sleep(25)
 
-        # 2. CAPTURA O TEMPO (MINUTO)
-        tempo = "Início"
+        # 1. BUSCAR O TEMPO REAL (Ex: 3', HT, Fim)
+        tempo = "0'"
+        # Lista de possíveis classes que a ESPN usa para o relógio
+        seletores_tempo = [".game-time", ".status-detail", ".GameStatus__Text", ".ScoreCell__Time"]
+        
+        for seletor in seletores_tempo:
+            try:
+                el = driver.find_element(By.CSS_SELECTOR, seletor)
+                if el.text:
+                    tempo = el.text.strip()
+                    break
+            except:
+                continue
+
+        # 2. BUSCAR GOLS
+        gols = ["0", "0"]
         try:
-            # Captura o elemento do status/tempo (ex: 3', Intervalo, Fim)
-            status_el = driver.find_element(By.CSS_SELECTOR, ".game-status, .status-detail, .GameStatus__Text")
-            tempo = status_el.text.strip()
+            # Pega os números grandes do placar
+            scores = driver.find_elements(By.CSS_SELECTOR, ".ScoreCell__Score, .detailScore__wrapper > span")
+            temp_gols = [s.text.strip() for s in scores if s.text.strip().isdigit()]
+            if len(temp_gols) >= 2:
+                gols = temp_gols[:2]
         except:
             pass
 
-        # 3. NOMES DOS TIMES (Garantindo que estão corretos)
-        times = driver.find_elements(By.CSS_SELECTOR, ".format--long, .ShortName")
-        time_a = times[0].text if len(times) > 0 else "São Paulo"
-        time_b = times[1].text if len(times) > 1 else "Portuguesa"
+        # 3. NOMES DOS TIMES
+        try:
+            # Tenta pegar os nomes dos times para confirmar
+            time_a = driver.find_elements(By.CSS_SELECTOR, ".format--long")[0].text
+            time_b = driver.find_elements(By.CSS_SELECTOR, ".format--long")[1].text
+        except:
+            time_a, time_b = "São Paulo", "Portuguesa"
 
-        # MONTAGEM DO RESULTADO
-        gol_casa = gols[0] if len(gols) >= 1 else "0"
-        gol_fora = gols[1] if len(gols) >= 2 else "0"
-
-        resultado = f"{time_a} {gol_casa} X {gol_fora} {time_b} | {tempo}"
-
-        # SALVA NO ARQUIVO
+        # MONTAGEM FINAL
+        resultado = f"{time_a} {gols[0]} X {gols[1]} {time_b} | {tempo}"
+        
+        # Salva o resultado no arquivo
         with open("placares.txt", "w", encoding="utf-8") as f:
             f.write(resultado)
-        
-        print(f"Sucesso: {resultado}")
+            
+        print(f"Atualizado: {resultado}")
 
     except Exception as e:
-        print(f"Erro ao processar: {e}")
+        print(f"Erro no scraping: {e}")
     finally:
         driver.quit()
 
 if __name__ == "__main__":
-    buscar_placar_espn()
+    buscar_placar()
