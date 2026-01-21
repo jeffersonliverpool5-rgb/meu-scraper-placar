@@ -4,65 +4,52 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 import time
 
-def buscar_placares_com_gols():
+def buscar_partida_especifica():
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
+    # Disfarce de navegador real
     options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
     
-    # Camuflagem anti-bot
-    options.add_experimental_option("excludeSwitches", ["enable-automation"])
-    options.add_experimental_option('useAutomationExtension', False)
-
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
-    # Esconde o uso de automação
+    # Camuflagem para não ser detectado como bot
     driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
         "source": "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
     })
 
     try:
-        print("Acessando AiScore...")
-        driver.get("https://www.aiscore.com/")
+        url = "https://www.aiscore.com/match-zed-fc-al-masry/ndkz6i3n5yjcxq3"
+        print(f"Acessando partida: {url}")
+        driver.get(url)
         
-        # Espera 40 segundos para garantir que os placares ao vivo carreguem
-        time.sleep(40) 
+        # Espera o placar e as estatísticas carregarem
+        time.sleep(30) 
 
-        # Tenta capturar os blocos de partidas centrais
-        # O seletor '.match-item' captura o bloco todo (Nomes + Placar)
-        jogos = driver.find_elements(By.CSS_SELECTOR, ".match-item")
-        
         with open("placares.txt", "w", encoding="utf-8") as f:
-            if not jogos:
-                f.write("Não foi possível encontrar os blocos de jogos. Tentando alternativa...\n")
-                # Alternativa: pega o texto de todos os elementos que parecem placar (ex: 0-0, 1-2)
-                elementos_texto = driver.find_elements(By.XPATH, "//*[contains(text(), '-')]")
-                for el in elementos_texto:
-                    txt = el.text.strip()
-                    if len(txt) > 3 and len(txt) < 100:
-                        f.write(txt.replace("\n", " ") + "\n")
-            else:
-                for jogo in jogos:
-                    try:
-                        # Extrai o texto completo do bloco (isso costuma incluir Nome Casa, Placar e Nome Fora)
-                        info = jogo.text.strip().split('\n')
-                        
-                        # Tenta organizar: [Time Casa] [Placar] [Time Fora]
-                        # Geralmente o AiScore coloca o placar no meio das linhas de texto
-                        linha_formatada = " | ".join(info)
-                        
-                        if len(linha_formatada) > 5:
-                            f.write(linha_formatada + "\n")
-                            print(f"Capturado: {linha_formatada}")
-                    except:
-                        continue
+            try:
+                # 1. Tenta pegar os nomes dos times e o placar no topo
+                header = driver.find_element(By.CLASS_NAME, "match-header")
+                f.write("=== DADOS DO JOGO ===\n")
+                f.write(header.text.replace("\n", " ") + "\n\n")
+            except:
+                # Se não achar o header, pega o título da página
+                f.write(f"Partida: {driver.title}\n")
 
-        print("Processo finalizado. Arquivo placares.txt atualizado.")
+            try:
+                # 2. Tenta pegar as estatísticas principais (posse, chutes, etc)
+                estatisticas = driver.find_elements(By.CLASS_NAME, "stat-item")
+                if estatisticas:
+                    f.write("=== ESTATÍSTICAS ===\n")
+                    for stat in estatisticas:
+                        f.write(stat.text.replace("\n", " ") + "\n")
+            except:
+                pass
+
+        print("Arquivo placares.txt atualizado com os dados da partida!")
 
     except Exception as e:
         print(f"Erro: {e}")
@@ -70,4 +57,4 @@ def buscar_placares_com_gols():
         driver.quit()
 
 if __name__ == "__main__":
-    buscar_placares_com_gols()
+    buscar_partida_especifica()
