@@ -18,7 +18,7 @@ def buscar_placares_simples():
     try:
         # Livescore.bz é um site bem básico, fácil de ler
         print("Acessando site de placares...")
-        driver.get("https://www.livescore.com/pt/") 
+        driver.get("https://www.lance.com.br/corinthians") 
         time.sleep(10) # Tempo para os placares carregarem
 
         # No livescore.bz, os jogos ficam em linhas de tabela (tr)
