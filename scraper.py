@@ -19,53 +19,50 @@ def buscar_placar():
         # URL do jogo São Paulo x Portuguesa
         driver.get("https://www.espn.com.br/futebol/partida/_/jogoId/762098")
         
-        # Tempo de espera para garantir que o JavaScript carregue os números
-        time.sleep(25)
+        # Espera o carregamento dos dados dinâmicos
+        time.sleep(20)
 
-        # 1. BUSCAR O TEMPO REAL (Ex: 3', HT, Fim)
+        # 1. BUSCAR O TEMPO REAL (Focado no container do placar)
         tempo = "0'"
-        # Lista de possíveis classes que a ESPN usa para o relógio
-        seletores_tempo = [".game-time", ".status-detail", ".GameStatus__Text", ".ScoreCell__Time"]
-        
-        for seletor in seletores_tempo:
-            try:
-                el = driver.find_element(By.CSS_SELECTOR, seletor)
-                if el.text:
+        try:
+            # Procuramos o tempo especificamente dentro do cabeçalho do jogo
+            # O seletor abaixo busca o status que fica entre os scores
+            status_container = driver.find_element(By.CSS_SELECTOR, ".GameStrip__FullStatus, .status-detail, .ScoreCell__Time")
+            texto_tempo = status_container.text.strip()
+            
+            # Se encontrar algo como "3'", "45+2'", "Intervalo" ou "Fim"
+            if texto_tempo:
+                tempo = texto_tempo
+        except:
+            # Fallback: tenta buscar qualquer número com ' que não seja 45' fixo se houver erro
+            elementos = driver.find_elements(By.XPATH, "//*[contains(text(), \"'\")]")
+            for el in elementos:
+                if len(el.text) <= 5: # Filtra para pegar apenas strings curtas como 12'
                     tempo = el.text.strip()
                     break
-            except:
-                continue
 
-        # 2. BUSCAR GOLS
+        # 2. BUSCAR GOLS (Focado nos números grandes)
         gols = ["0", "0"]
         try:
-            # Pega os números grandes do placar
-            scores = driver.find_elements(By.CSS_SELECTOR, ".ScoreCell__Score, .detailScore__wrapper > span")
-            temp_gols = [s.text.strip() for s in scores if s.text.strip().isdigit()]
-            if len(temp_gols) >= 2:
-                gols = temp_gols[:2]
+            scores = driver.find_elements(By.CSS_SELECTOR, ".ScoreCell__Score")
+            if len(scores) >= 2:
+                gols = [s.text.strip() for s in scores[:2]]
         except:
             pass
 
         # 3. NOMES DOS TIMES
-        try:
-            # Tenta pegar os nomes dos times para confirmar
-            time_a = driver.find_elements(By.CSS_SELECTOR, ".format--long")[0].text
-            time_b = driver.find_elements(By.CSS_SELECTOR, ".format--long")[1].text
-        except:
-            time_a, time_b = "São Paulo", "Portuguesa"
+        time_a, time_b = "São Paulo", "Portuguesa"
 
         # MONTAGEM FINAL
         resultado = f"{time_a} {gols[0]} X {gols[1]} {time_b} | {tempo}"
         
-        # Salva o resultado no arquivo
         with open("placares.txt", "w", encoding="utf-8") as f:
             f.write(resultado)
             
-        print(f"Atualizado: {resultado}")
+        print(f"Resultado Capturado: {resultado}")
 
     except Exception as e:
-        print(f"Erro no scraping: {e}")
+        print(f"Erro: {e}")
     finally:
         driver.quit()
 
