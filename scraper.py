@@ -18,7 +18,7 @@ def buscar_apenas_jogo_ao_vivo():
     
     try:
         # Link do time Shire Endaselassie FC
-        driver.get("https://www.aiscore.com/team-shire-endaselassie-fc/34kgmino3lh8ko9")
+        driver.get("https://www.aiscore.com/team-ceramica-cleopatra-fc/ndkz6i99r6teq3z")
         time.sleep(45) 
 
         # Procura os elementos de jogo
