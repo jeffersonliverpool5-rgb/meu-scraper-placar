@@ -7,7 +7,7 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 
-def buscar_e_limpar_agenda():
+def buscar_apenas_jogo_ao_vivo():
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
@@ -17,48 +17,38 @@ def buscar_e_limpar_agenda():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
-        # Acessa o link do time onde estão esses dados
+        # Link do time Shire Endaselassie FC
         driver.get("https://www.aiscore.com/team-shire-endaselassie-fc/34kgmino3lh8ko9")
         time.sleep(45) 
 
-        # Pega os blocos que contêm as informações das partidas
-        # O seletor 'match-item' ou 'schedule-item' costuma conter essas linhas
-        elementos = driver.find_elements(By.XPATH, "//*[contains(text(), 'Shire')]")
+        # Procura os elementos de jogo
+        elementos = driver.find_elements(By.CLASS_NAME, "match-item")
         
-        resultados_finais = []
+        jogo_ao_vivo = ""
 
         for el in elementos:
-            # Pega o texto e remove quebras de linha extras
             texto = el.text.strip()
             
-            # REGRA DE LIMPEZA:
-            # 1. Procura por padrões de placar como "1 - 3", "0 - 1" ou apenas "-"
-            # 2. Ignora textos longos de "Premier League" e datas
-            if "Shire" in texto and ("-" in texto or "vs" in texto):
-                # Remove informações que você não quer (datas e nome da liga)
-                # Vamos usar Expressão Regular para pegar apenas o essencial
-                # Tenta capturar: Time Casa + Placar + Time Fora
-                partes = texto.split('\n')
-                
-                # Se o texto vier bagunçado em uma linha só, tentamos organizar
-                linha_limpa = texto.replace("Ethiopia Premier League", "").strip()
-                # Remove datas (ex: 4 Jan 10:00)
-                linha_limpa = re.sub(r'\d+\s+[a-zA-Z]+\s+\d{2}:\d{2}', '', linha_limpa)
-                
-                if len(linha_limpa) > 5:
-                    # Evita duplicados na lista
-                    if linha_limpa not in resultados_finais:
-                        resultados_finais.append(linha_limpa)
+            # REGRA PARA JOGO AO VIVO:
+            # 1. Tem que ter o nome do time
+            # 2. Tem que ter um indicador de tempo real (minutos como 70', 85' ou HT para intervalo)
+            # 3. Ignora se tiver datas (Jan, Feb) para não pegar jogos passados
+            if "Shire" in texto:
+                # Procura por números seguidos de ' (ex: 85') ou o termo HT
+                if re.search(r"\d+'|HT", texto):
+                    # Limpeza: remove nomes de ligas e lixo lateral
+                    limpo = texto.replace("Ethiopia Premier League", "").replace("\n", " ").strip()
+                    # Remove a data se ela vier grudada
+                    limpo = re.sub(r'\d+\s+[a-zA-Z]+\s+\d{2}:\d{2}', '', limpo)
+                    jogo_ao_vivo = " ".join(limpo.split())
+                    break # Para na primeira ocorrência (o jogo atual)
 
         with open("placares.txt", "w", encoding="utf-8") as f:
-            if resultados_finais:
-                for res in resultados_finais:
-                    # Limpeza final de espaços duplos
-                    final = " ".join(res.split())
-                    f.write(final + "\n")
-                    print(f"Adicionado: {final}")
+            if jogo_ao_vivo:
+                f.write(f"AO VIVO AGORA: {jogo_ao_vivo}\n")
+                print(f"Capturado: {jogo_ao_vivo}")
             else:
-                f.write("Nenhum dado de jogo formatado foi encontrado.")
+                f.write("Não há nenhum jogo do Shire Endaselassie FC a acontecer agora.\n")
 
     except Exception as e:
         print(f"Erro: {e}")
@@ -66,4 +56,4 @@ def buscar_e_limpar_agenda():
         driver.quit()
 
 if __name__ == "__main__":
-    buscar_e_limpar_agenda()
+    buscar_apenas_jogo_ao_vivo()
