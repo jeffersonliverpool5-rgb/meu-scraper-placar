@@ -7,7 +7,7 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 
-def buscar_apenas_o_jogo():
+def buscar_e_limpar_agenda():
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
@@ -17,36 +17,48 @@ def buscar_apenas_o_jogo():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
-        # Link específico do seu time
+        # Acessa o link do time onde estão esses dados
         driver.get("https://www.aiscore.com/team-shire-endaselassie-fc/34kgmino3lh8ko9")
-        
-        # Tempo de espera para o placar ao vivo carregar
         time.sleep(45) 
 
-        # Pega todos os elementos que podem conter o texto do jogo
+        # Pega os blocos que contêm as informações das partidas
+        # O seletor 'match-item' ou 'schedule-item' costuma conter essas linhas
         elementos = driver.find_elements(By.XPATH, "//*[contains(text(), 'Shire')]")
         
-        jogos_encontrados = []
+        resultados_finais = []
 
         for el in elementos:
-            txt = el.text.strip().replace("\n", " ")
+            # Pega o texto e remove quebras de linha extras
+            texto = el.text.strip()
             
-            # FILTRO MESTRE: 
-            # 1. Tem que ter "Shire"
-            # 2. Tem que ter um número, um traço e outro número (placar: 0 - 0)
-            if "Shire" in txt and re.search(r'\d+\s*-\s*\d+', txt):
-                # Limpa palavras de menu que costumam vir grudadas
-                txt_limpo = txt.replace("Live", "").replace("Schedule", "").replace("Finished", "").strip()
-                if txt_limpo not in jogos_encontrados:
-                    jogos_encontrados.append(txt_limpo)
+            # REGRA DE LIMPEZA:
+            # 1. Procura por padrões de placar como "1 - 3", "0 - 1" ou apenas "-"
+            # 2. Ignora textos longos de "Premier League" e datas
+            if "Shire" in texto and ("-" in texto or "vs" in texto):
+                # Remove informações que você não quer (datas e nome da liga)
+                # Vamos usar Expressão Regular para pegar apenas o essencial
+                # Tenta capturar: Time Casa + Placar + Time Fora
+                partes = texto.split('\n')
+                
+                # Se o texto vier bagunçado em uma linha só, tentamos organizar
+                linha_limpa = texto.replace("Ethiopia Premier League", "").strip()
+                # Remove datas (ex: 4 Jan 10:00)
+                linha_limpa = re.sub(r'\d+\s+[a-zA-Z]+\s+\d{2}:\d{2}', '', linha_limpa)
+                
+                if len(linha_limpa) > 5:
+                    # Evita duplicados na lista
+                    if linha_limpa not in resultados_finais:
+                        resultados_finais.append(linha_limpa)
 
         with open("placares.txt", "w", encoding="utf-8") as f:
-            if jogos_encontrados:
-                for j in jogos_encontrados:
-                    f.write(j + "\n")
-                    print(f"Jogo salvo: {j}")
+            if resultados_finais:
+                for res in resultados_finais:
+                    # Limpeza final de espaços duplos
+                    final = " ".join(res.split())
+                    f.write(final + "\n")
+                    print(f"Adicionado: {final}")
             else:
-                f.write("Nenhum placar ao vivo encontrado para este time no momento.")
+                f.write("Nenhum dado de jogo formatado foi encontrado.")
 
     except Exception as e:
         print(f"Erro: {e}")
@@ -54,4 +66,4 @@ def buscar_apenas_o_jogo():
         driver.quit()
 
 if __name__ == "__main__":
-    buscar_apenas_o_jogo()
+    buscar_e_limpar_agenda()
