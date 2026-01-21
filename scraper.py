@@ -18,7 +18,7 @@ def buscar_jogos_definitivo():
     
     try:
         print("Acessando AiScore...")
-        driver.get("https://www.aiscore.com/team-galatasaray/2ezk96i1ppawkn5")
+        driver.get("https://www.aiscore.com/match-galatasaray-atletico-madrid/j374oi05w0dfgqo")
         
         # Espera longa para carregar os placares do meio
         time.sleep(45) 
