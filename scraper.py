@@ -18,7 +18,7 @@ def buscar_placar_exato():
     
     try:
         # Forçamos o link com um parâmetro de tempo para evitar cache do navegador
-        driver.get(f"https://www.espn.com.br/futebol/partida/_/jogoId/757778?refresh={int(time.time())}")
+        driver.get(f"https://www.espn.com.br/futebol/partida/_/jogoId/757777?refresh={int(time.time())}")
         
         # Espera o tempo necessário para o placar "subir" na tela
         time.sleep(30) 
