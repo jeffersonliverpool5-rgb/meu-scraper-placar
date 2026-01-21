@@ -19,7 +19,7 @@ def buscar_aiscore():
     
     try:
         print("Abrindo AiScore Live...")
-        driver.get("https://www.aiscore.com")
+        driver.get("https://www.google.com/search?q=newcastle+&sca_esv=7961302cda4152b2&sxsrf=ANbL-n6Ubpp2_JfiU68gZEXq6DoHOXYNfQ%3A1768999094108&ei=tshwadKpBvLQ1sQPuKGRuAE&ved=0ahUKEwjS3PKU05ySAxVyqJUCHbhQBBcQ4dUDCBE&uact=5&oq=newcastle+&gs_lp=Egxnd3Mtd2l6LXNlcnAiCm5ld2Nhc3RsZSAyChAjGIAEGCcYigUyDRAAGIAEGLEDGBQYhwIyDhAAGIAEGLEDGIMBGIoFMgUQABiABDIIEC4YgAQYsQMyCBAuGIAEGLEDMgoQABiABBgUGIcCMgQQABgDMgUQABiABDILEAAYgAQYsQMYgwFI2hNQ7AZY_BFwAXgBkAEAmAGlAaABqQmqAQMwLjm4AQPIAQD4AQGYAgWgAuEEwgIKEAAYsAMY1gQYR8ICDRAAGIAEGLADGEMYigXCAg0QLhiABBiwAxhDGIoFwgIKEAAYgAQYQxiKBcICBhAAGBYYHsICCBAAGIAEGLEDmAMAiAYBkAYKkgcDMS40oAfHSLIHAzAuNLgH1wTCBwUyLTEuNMgHNoAIAA&sclient=gws-wiz-serp")
         
         # Espera até 20 segundos para a página carregar os jogos
         wait = WebDriverWait(driver, 20)
