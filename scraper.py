@@ -17,13 +17,13 @@ def buscar_placar_exato():
     
     try:
         # LINK DO JOGO NEWCASTLE X PSV
-        driver.get("https://www.espn.com.br/futebol/partida/_/jogoId/757778")
+        driver.get("https://www.espn.com.br/futebol/partida/_/jogoId/757773")
         
         # Espera o carregamento dos elementos dinâmicos
         time.sleep(30) 
 
-        TIME_A = "Newcastle"
-        TIME_B = "PSV"
+        TIME_A = "Slavia Prague"
+        TIME_B = "Barcelona"
 
         # 1. BUSCA O TEMPO (MINUTO)
         tempo = "Início"
