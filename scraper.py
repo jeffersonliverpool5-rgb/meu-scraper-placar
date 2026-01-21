@@ -1,37 +1,36 @@
-import time
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium.webdriver.common.by import By
+name: Atualizar Placares AiScore
 
-def rodar_scraper():
-    options = Options()
-    options.add_argument("--headless")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-    
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    
-    try:
-        # O teu link atual
-        driver.get("https://www.aiscore.com/team-cd-fas-reserves/edq09ip2z4i4qxg")
-        time.sleep(45) 
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
 
-        # Captura tudo o que for jogo ou item (a tua lógica que funciona)
-        elementos = driver.find_elements(By.XPATH, "//div[contains(@class, 'match')] | //div[contains(@class, 'item')]")
-        
-        with open("placares.txt", "w", encoding="utf-8") as f:
-            for el in elementos:
-                txt = el.text.strip().replace("\n", " ")
-                if len(txt) > 10:
-                    f.write(txt + "\n")
-                    
-    except Exception as e:
-        print(f"Erro: {e}")
-    finally:
-        driver.quit()
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v3
 
-if __name__ == "__main__":
-    rodar_scraper()
+      - name: Instalar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Instalar Selenium e Chrome
+        run: |
+          python -m pip install --upgrade pip
+          pip install selenium webdriver-manager
+          sudo apt-get update
+          sudo apt-get install google-chrome-stable
+
+      - name: Executar Scraper
+        run: python scraper.py
+
+      - name: Salvar alterações no GitHub
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git add placares.txt
+          git commit -m "Atualizando placares" || exit 0
+          git push
