@@ -4,52 +4,58 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 import time
 
-def buscar_aiscore():
+def buscar_aiscore_protegido():
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
     
+    # ISSO É O MAIS IMPORTANTE: Engana o sistema anti-bot
+    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+    options.add_experimental_option("excludeSwitches", ["enable-automation"])
+    options.add_experimental_option('useAutomationExtension', False)
+
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
+    # Comando extra para evitar detecção
+    driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
+        "source": "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
+    })
+
     try:
-        print("Abrindo AiScore Live...")
-        driver.get("https://www.google.com/search?q=newcastle+&sca_esv=7961302cda4152b2&sxsrf=ANbL-n6Ubpp2_JfiU68gZEXq6DoHOXYNfQ%3A1768999094108&ei=tshwadKpBvLQ1sQPuKGRuAE&ved=0ahUKEwjS3PKU05ySAxVyqJUCHbhQBBcQ4dUDCBE&uact=5&oq=newcastle+&gs_lp=Egxnd3Mtd2l6LXNlcnAiCm5ld2Nhc3RsZSAyChAjGIAEGCcYigUyDRAAGIAEGLEDGBQYhwIyDhAAGIAEGLEDGIMBGIoFMgUQABiABDIIEC4YgAQYsQMyCBAuGIAEGLEDMgoQABiABBgUGIcCMgQQABgDMgUQABiABDILEAAYgAQYsQMYgwFI2hNQ7AZY_BFwAXgBkAEAmAGlAaABqQmqAQMwLjm4AQPIAQD4AQGYAgWgAuEEwgIKEAAYsAMY1gQYR8ICDRAAGIAEGLADGEMYigXCAg0QLhiABBiwAxhDGIoFwgIKEAAYgAQYQxiKBcICBhAAGBYYHsICCBAAGIAEGLEDmAMAiAYBkAYKkgcDMS40oAfHSLIHAzAuNLgH1wTCBwUyLTEuNMgHNoAIAA&sclient=gws-wiz-serp")
+        print("Acessando AiScore...")
+        # Usamos o link direto da aba LIVE para evitar redirecionamentos
+        driver.get("https://www.aiscore.com/live")
         
-        # Espera até 20 segundos para a página carregar os jogos
-        wait = WebDriverWait(driver, 20)
-        
-        # Tenta localizar os itens de jogo de uma forma mais robusta
-        time.sleep(10) 
-        
-        # Busca todos os blocos de jogos
-        jogos = driver.find_elements(By.XPATH, "//div[contains(@class, 'match-item')]")
+        # Espera longa para garantir que o JavaScript carregue os jogos
+        time.sleep(20) 
+
+        # Tenta pegar todos os blocos de jogos usando um seletor de texto
+        jogos = driver.find_elements(By.CSS_SELECTOR, ".match-item, .item")
         
         with open("placares.txt", "w", encoding="utf-8") as f:
             if not jogos:
-                f.write("Nenhum jogo ao vivo detectado no momento.")
-                print("Nenhum jogo encontrado.")
+                # Se não achou por classe, tenta pegar o texto bruto da página
+                corpo_site = driver.find_element(By.TAG_NAME, "body").text
+                if "Live" in corpo_site:
+                    f.write("Dados Brutos Encontrados:\n")
+                    f.write(corpo_site[:1000]) # Salva os primeiros 1000 caracteres
+                else:
+                    f.write("O site bloqueou o acesso ou não há jogos agora.")
             else:
                 for jogo in jogos:
-                    try:
-                        # Pega o texto inteiro do bloco do jogo e limpa
-                        dados = jogo.text.replace('\n', ' ')
-                        f.write(dados + "\n")
-                        print(f"Capturado: {dados}")
-                    except:
-                        continue
-        print("Processo concluído.")
+                    texto = jogo.text.replace("\n", " ")
+                    if len(texto) > 5:
+                        f.write(texto + "\n")
         
+        print("Fim do processo.")
+
     except Exception as e:
-        with open("placares.txt", "w") as f:
-            f.write(f"Erro no scraping: {str(e)}")
+        print(f"Erro: {e}")
     finally:
         driver.quit()
 
 if __name__ == "__main__":
-    buscar_aiscore()
+    buscar_aiscore_protegido()
