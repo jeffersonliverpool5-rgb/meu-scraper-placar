@@ -16,34 +16,34 @@ def buscar_placar():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
-        # URL do jogo São Paulo x Portuguesa
+        # URL exata do jogo São Paulo x Portuguesa
         driver.get("https://www.espn.com.br/futebol/partida/_/jogoId/762098")
         
-        # Espera o carregamento dos dados dinâmicos
-        time.sleep(20)
+        # Espera o carregamento (reduzido para 15s para ser mais ágil no GitHub)
+        time.sleep(15)
 
-        # 1. BUSCAR O TEMPO REAL (Focado no container do placar)
-        tempo = "0'"
+        # 1. BUSCAR O TEMPO REAL (Priorizando o relógio do topo)
+        tempo = "Início"
         try:
-            # Procuramos o tempo especificamente dentro do cabeçalho do jogo
-            # O seletor abaixo busca o status que fica entre os scores
-            status_container = driver.find_element(By.CSS_SELECTOR, ".GameStrip__FullStatus, .status-detail, .ScoreCell__Time")
-            texto_tempo = status_container.text.strip()
-            
-            # Se encontrar algo como "3'", "45+2'", "Intervalo" ou "Fim"
-            if texto_tempo:
-                tempo = texto_tempo
+            # Tenta o seletor do cronômetro principal que aparece no placar do topo
+            # Esse seletor ".GameState__Time" é o mais comum para o tempo corrido
+            el_tempo = driver.find_element(By.CSS_SELECTOR, ".GameStatus__Text, .GameState__Time, .ScoreCell__Time--active")
+            if el_tempo.text:
+                tempo = el_tempo.text.strip()
         except:
-            # Fallback: tenta buscar qualquer número com ' que não seja 45' fixo se houver erro
-            elementos = driver.find_elements(By.XPATH, "//*[contains(text(), \"'\")]")
-            for el in elementos:
-                if len(el.text) <= 5: # Filtra para pegar apenas strings curtas como 12'
-                    tempo = el.text.strip()
-                    break
+            # Se falhar, procura por qualquer texto que tenha o símbolo de minutos (') no topo da página
+            try:
+                header = driver.find_element(By.ID, "gamepackage-header-wrap")
+                match = re.search(r"\d+'(\+\d+)?'|HT|Intervalo|Fim", header.text)
+                if match:
+                    tempo = match.group()
+            except:
+                pass
 
-        # 2. BUSCAR GOLS (Focado nos números grandes)
+        # 2. BUSCAR GOLS
         gols = ["0", "0"]
         try:
+            # Seleciona apenas os scores que estão dentro do cabeçalho principal
             scores = driver.find_elements(By.CSS_SELECTOR, ".ScoreCell__Score")
             if len(scores) >= 2:
                 gols = [s.text.strip() for s in scores[:2]]
@@ -59,7 +59,7 @@ def buscar_placar():
         with open("placares.txt", "w", encoding="utf-8") as f:
             f.write(resultado)
             
-        print(f"Resultado Capturado: {resultado}")
+        print(f"Capturado: {resultado}")
 
     except Exception as e:
         print(f"Erro: {e}")
