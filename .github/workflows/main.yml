@@ -35,10 +35,10 @@ jobs:
           grep -vE "PTS|Estatísticas|ATA|ATH|,|falta|sofre|campo|Minuto|vencendo|posse" topo.txt > sem_lixo.txt
           
           # 3. FILTRA APENAS O QUE IMPORTA:
-          # Pega as linhas com os nomes dos times (Galatasaray/Atl Madrid)
+          # Pega as linhas com os nomes dos times (FK Qarabag/Eintracht Frankfurt)
           # Pega o minuto do jogo (ex: 41')
           # Pega números sozinhos de 0 a 9 (que é onde fica o placar na ESPN)
-          grep -Ei "Galatasaray|Atl|Madrid|'|HT|FIM|^[0-9]$|^[0-9] - [0-9]$" sem_lixo.txt > final.txt
+          grep -Ei FK Qarabag|Eintracht Frankfurt|'|HT|FIM|^[0-9]$|^[0-9] - [0-9]$" sem_lixo.txt > final.txt
           
           # 4. Salva o resultado
           if [ ! -s final.txt ]; then
