@@ -1,4 +1,4 @@
-name: Scraper Newcastle PSV
+name: Scraper Newcastle Live
 
 on:
   schedule:
@@ -12,7 +12,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Setup Python
+      - name: Configurar Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
@@ -28,5 +28,5 @@ jobs:
           git config --global user.name "Bot Placar"
           git config --global user.email "bot@github.com"
           git add placares.txt
-          git commit -m "Placar Live: $(cat placares.txt)" || exit 0
+          git commit -m "Newcastle Update: $(cat placares.txt)" || exit 0
           git push
