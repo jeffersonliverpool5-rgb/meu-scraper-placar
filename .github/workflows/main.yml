@@ -1,23 +1,23 @@
-name: Scraper GE Live
+name: Scraper GE Bruto
 
 on:
   schedule:
-    - cron: '*/2 * * * *'
+    - cron: '*/2 * * * *' # Roda a cada 2 minutos
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout Código
         uses: actions/checkout@v3
 
-      - name: Configurar Python
+      - name: Instalar Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      - name: Instalar Chrome
+      - name: Instalar Navegador Chrome
         run: |
           sudo apt-get update
           sudo apt-get install -y google-chrome-stable
@@ -25,13 +25,13 @@ jobs:
       - name: Instalar Selenium
         run: pip install selenium webdriver-manager
 
-      - name: Rodar Scraper
+      - name: Executar Scraper
         run: python scraper.py
 
-      - name: Enviar para o Repositório
+      - name: Salvar Resultado
         run: |
-          git config --global user.name "Bot GE"
-          git config --global user.email "bot@ge.com"
+          git config --global user.name "Bot Extração"
+          git config --global user.email "bot@scrap.com"
           git add placares.txt
-          git commit -m "Placar: $(cat placares.txt)" || exit 0
+          git commit -m "Update Bruto: $(cat placares.txt)" || exit 0
           git push
