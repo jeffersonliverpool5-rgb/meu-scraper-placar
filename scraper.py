@@ -14,34 +14,19 @@ def rodar_scraper():
     
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
-    # AJUSTE O TIME AQUI
-    TIME_NOME = "Newcastle" 
-    
     try:
-        # Link do time ou jogo
+        # Link do time (ajuste para o time que quiser)
         driver.get("https://www.aiscore.com/team-newcastle-united/714x6i6v9y7q29v")
         time.sleep(45) 
 
-        # Captura todos os blocos de partidas
+        # Captura tudo (a sua técnica que funciona)
         elementos = driver.find_elements(By.XPATH, "//div[contains(@class, 'match')] | //div[contains(@class, 'item')]")
         
-        resultado_final = "Aguardando início do jogo..."
-
-        for el in elementos:
-            txt = el.text.strip().replace("\n", " ")
-            # Se a linha contém o nome do time, salvamos ela
-            if TIME_NOME in txt:
-                # Se encontrar o símbolo de tempo (') ou HT, prioriza essa linha
-                if "'" in txt or "HT" in txt:
-                    resultado_final = " ".join(txt.split())
-                    break 
-                else:
-                    # Se não estiver ao vivo ainda, guarda a linha do próximo jogo
-                    resultado_final = " ".join(txt.split())
-
         with open("placares.txt", "w", encoding="utf-8") as f:
-            f.write(resultado_final)
-            print(f"Gravado: {resultado_final}")
+            for el in elementos:
+                txt = el.text.strip().replace("\n", " ")
+                if len(txt) > 10:
+                    f.write(txt + "\n")
                     
     except Exception as e:
         print(f"Erro: {e}")
