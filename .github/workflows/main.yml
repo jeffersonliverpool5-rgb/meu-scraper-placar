@@ -1,8 +1,8 @@
-name: Scraper Paulistão Live
+name: Scraper GE Paulistão
 
 on:
   schedule:
-    - cron: '*/3 * * * *'
+    - cron: '*/2 * * * *' # Roda a cada 2 minutos para o GE
   workflow_dispatch:
 
 jobs:
@@ -30,8 +30,8 @@ jobs:
 
       - name: Salvar no GitHub
         run: |
-          git config --global user.name "Bot Placar"
+          git config --global user.name "Bot GE"
           git config --global user.email "bot@github.com"
           git add placares.txt
-          git commit -m "Live: $(cat placares.txt)" || exit 0
+          git commit -m "GE Update: $(cat placares.txt)" || exit 0
           git push
