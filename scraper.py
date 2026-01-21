@@ -6,7 +6,7 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 
-def buscar_focado_total():
+def buscar_posicional():
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
@@ -18,57 +18,49 @@ def buscar_focado_total():
     try:
         # LINK DO JOGO
         driver.get("https://www.espn.com.br/futebol/partida/_/jogoId/757771")
-        time.sleep(30)
+        time.sleep(35) # Tempo extra para garantir carga total
         
-        # 1. BUSCA OS TIMES PELAS CLASSES DE NOME CURTO/LONGO DA ESPN
-        # Isso evita pegar "Carioca", "NFL", etc.
-        try:
-            # Tenta pegar os nomes que estão no bloco de placar
-            times_elementos = driver.find_elements(By.XPATH, "//span[contains(@class, 'long-name')] | //span[contains(@class, 'short-name')] | //div[contains(@class, 'team-name')]")
-            nomes = [t.text.strip() for t in times_elementos if t.text.strip() and len(t.text) > 1]
-            
-            # Pega os dois primeiros nomes únicos (Time Casa e Visitante)
-            equipes = []
-            for n in nomes:
-                if n not in equipes and n not in ["NBA", "NFL", "Carioca", "Champions", "Paulista"]:
-                    equipes.append(n)
-            equipes = equipes[:2]
-        except:
-            equipes = ["Time A", "Time B"]
-
-        # 2. BUSCA PLACAR E TEMPO (REDE DE ARRASTÃO NO TOPO)
-        placar = ["0", "0"]
-        tempo = "Aguardando..."
+        # PEGA O TEXTO BRUTO DE TUDO
+        linhas = driver.find_element(By.TAG_NAME, "body").text.split('\n')
         
-        try:
-            # Foca apenas no container do placar para não pegar lixo
-            container = driver.find_element(By.CLASS_NAME, "Gamestrip")
-            texto_bruto = container.text.split('\n')
-            
-            gols_encontrados = []
-            for linha in texto_bruto:
-                linha = linha.strip()
-                # Verifica minuto
-                if "'" in linha or "HT" in linha or "Fim" in linha:
-                    tempo = linha
-                # Verifica números do placar
-                elif re.match(r"^[0-9]$", linha):
-                    gols_encontrados.append(linha)
-            
-            if len(gols_encontrados) >= 2:
-                placar = gols_encontrados[:2]
-        except:
-            tempo = "Live"
+        # FILTRO: Vamos ignorar menus iniciais comuns (até 20 linhas de lixo podem existir)
+        # Mas o placar real na ESPN costuma estar entre a linha 5 e 30.
+        dados_uteis = []
+        for l in linhas[:40]:
+            limpa = l.strip()
+            # Ignora palavras de menu conhecidas
+            if any(x in limpa for x in ["Resultados", "Calendário", "Equipes", "NBA", "NFL", "Champions", "Carioca", "Paulista", "Vídeo"]):
+                continue
+            if len(limpa) > 0:
+                dados_uteis.append(limpa)
 
-        # MONTAGEM FINAL
-        if len(equipes) >= 2:
-            resultado = f"{equipes[0]} {placar[0]} - {placar[1]} {equipes[1]} | {tempo}"
+        # Na ESPN, a estrutura quase sempre é:
+        # Linha X: Time Casa
+        # Linha X+1: Placar Casa
+        # Linha X+2: Time Visitante
+        # Linha X+3: Placar Visitante
+        # Linha X+4: Tempo
+        
+        # Vamos buscar o índice do tempo (ex: 58') para nos guiar
+        idx_tempo = -1
+        for i, texto in enumerate(dados_uteis):
+            if "'" in texto or "HT" in texto or "Fim" in texto or "Intervalo" in texto:
+                idx_tempo = i
+                break
+        
+        if idx_tempo != -1:
+            # Se achamos o tempo, os times e placares estão logo acima dele
+            # Pegamos um bloco de 5 linhas ao redor do tempo
+            inicio = max(0, idx_tempo - 4)
+            bloco = dados_uteis[inicio:idx_tempo + 1]
+            resultado = " ".join(bloco)
         else:
-            resultado = "Buscando dados da partida..."
+            # Se não achou o minuto, pega as primeiras 10 linhas limpas
+            resultado = " | ".join(dados_uteis[:6])
 
         with open("placares.txt", "w", encoding="utf-8") as f:
             f.write(resultado)
-            print(f"Final: {resultado}")
+            print(f"Gravado: {resultado}")
 
     except Exception as e:
         print(f"Erro: {e}")
@@ -76,4 +68,4 @@ def buscar_focado_total():
         driver.quit()
 
 if __name__ == "__main__":
-    buscar_focado_total()
+    buscar_posicional()
