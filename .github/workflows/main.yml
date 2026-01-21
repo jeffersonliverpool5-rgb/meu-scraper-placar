@@ -17,9 +17,8 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Instalar Dependencias
-        run: |
-          pip install selenium webdriver-manager
+      - name: Instalar Selenium
+        run: pip install selenium webdriver-manager
 
       - name: Executar Scraper
         run: python scraper.py
@@ -29,6 +28,5 @@ jobs:
           git config --global user.name "Bot Placar"
           git config --global user.email "bot@github.com"
           git add placares.txt
-          # O commit só acontece se houver mudança real no placar
           git commit -m "Newcastle Update: $(cat placares.txt)" || exit 0
           git push
