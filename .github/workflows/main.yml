@@ -1,41 +1,53 @@
-name: Scraper Partida Live ESPN
+name: Scraper Live ESPN
 
 on:
   schedule:
     - cron: '*/5 * * * *' # Roda a cada 5 minutos
-  workflow_dispatch:
+  workflow_dispatch:      # Permite rodar manualmente pelo botão
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      - name: Checkout do código
         uses: actions/checkout@v3
 
-      - name: Setup Python
+      - name: Configurar Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      - name: Instalar Selenium
-        run: pip install selenium webdriver-manager
+      - name: Instalar Dependências
+        run: |
+          pip install selenium webdriver-manager
 
-      - name: Executar Scraper
+      - name: Executar Scraper (Texto Bruto)
         run: python scraper.py
 
-      - name: Limpar Texto e Deixar So Live
+      - name: Filtro de Limpeza Real Time
         run: |
-          # Filtra o arquivo para focar no placar e tempo
-          # Remove termos comuns de menus da ESPN para o arquivo ficar limpo
-          sed -i 's/Entrar//g; s/Assinar//g; s/Resultados//g; s/Calendário//g' placares.txt
-          # Mantém apenas a linha que tem cara de jogo
-          grep -E "[0-9] - [0-9]|'|HT|Fim" placares.txt > vivo.txt || echo "Jogo ainda não atualizou" > vivo.txt
-          mv vivo.txt placares.txt
+          # 1. Pega as primeiras 60 linhas (onde fica o placar na ESPN)
+          head -n 60 placares.txt > topo.txt
+          
+          # 2. Procura pelos times ou indicadores de jogo rolando (', HT, -, Final)
+          # O grep -i ignora maiúsculas/minúsculas
+          grep -Ei "Real Madrid|Al-Hilal|Al Hilal|[0-9] - [0-9]|'|HT|FIM|FINAL" topo.txt > linhas_jogo.txt || echo "Jogo não localizado no topo" > linhas_jogo.txt
+          
+          # 3. Limpa palavras de menu que costumam vir junto
+          grep -vE "Assinar|Entrar|ESPN|Resultados|Futebol|Calendário|Equipes" linhas_jogo.txt > placares_limpo.txt
+          
+          # 4. Se o arquivo estiver vazio após a limpeza, avisa
+          if [ ! -s placares_limpo.txt ]; then
+            echo "Aguardando dados da partida..." > placares.txt
+          else
+            mv placares_limpo.txt placares.txt
+          fi
 
-      - name: Push no GitHub
+      - name: Salvar no GitHub
         run: |
-          git config --global user.name "Bot Placar"
-          git config --global user.email "bot@github.com"
+          git config --global user.name "GitHub Action Bot"
+          git config --global user.email "action@github.com"
           git add placares.txt
-          git commit -m "Atualização Live: $(date +'%H:%M')" || exit 0
+          git commit -m "Live Update: $(date +'%d/%m %H:%M')" || exit 0
           git push
