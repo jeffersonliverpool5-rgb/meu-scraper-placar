@@ -1,1 +1,5 @@
-Nenhum jogo encontrado na área central.
+Egypt: Egyptian Scores Cup 9999 1 X 2 12:30 PM 85 ZED FC 0 - 0 Al Masry HT 0-0 1 - 1 12.50 1.12 10.20 Egypt: Egyptian Division 2 6545 1 X 2 12:30 PM 87 Delphi SC 2 - 1 Abu Al Matamir HT 2-0 0 - 0 1.06 8.00 71.00 12:30 PM 83 Golden Gate SC 0 - 0 Egypt Stars HT 0-0 6 - 3 4.00 1.29 9.50 Ethiopia: Premier League - Round 16 5910 1 X 2 1:00 PM 62 Shire Endaselassie FC 1 - 0 Arba Minch HT 1-0 3 - 4 1.30 4.00 11.00
+Egypt: Egyptian Scores Cup 9999 1 X 2 12:30 PM 85 ZED FC 0 - 0 Al Masry HT 0-0 1 - 1 12.50 1.12 10.20 Egypt: Egyptian Division 2 6545 1 X 2 12:30 PM 87 Delphi SC 2 - 1 Abu Al Matamir HT 2-0 0 - 0 1.06 8.00 71.00 12:30 PM 83 Golden Gate SC 0 - 0 Egypt Stars HT 0-0 6 - 3 4.00 1.29 9.50 Ethiopia: Premier League - Round 16 5910 1 X 2 1:00 PM 62 Shire Endaselassie FC 1 - 0 Arba Minch HT 1-0 3 - 4 1.30 4.00 11.00
+Egypt: Egyptian Scores Cup 9999 1 X 2 12:30 PM 85 ZED FC 0 - 0 Al Masry HT 0-0 1 - 1 12.50 1.12 10.20
+Egypt: Egyptian Division 2 6545 1 X 2 12:30 PM 87 Delphi SC 2 - 1 Abu Al Matamir HT 2-0 0 - 0 1.06 8.00 71.00 12:30 PM 83 Golden Gate SC 0 - 0 Egypt Stars HT 0-0 6 - 3 4.00 1.29 9.50
+Ethiopia: Premier League - Round 16 5910 1 X 2 1:00 PM 62 Shire Endaselassie FC 1 - 0 Arba Minch HT 1-0 3 - 4 1.30 4.00 11.00
