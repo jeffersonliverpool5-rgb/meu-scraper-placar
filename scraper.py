@@ -27,7 +27,7 @@ def buscar_aiscore_protegido():
     try:
         print("Acessando AiScore...")
         # Usamos o link direto da aba LIVE para evitar redirecionamentos
-        driver.get("https://www.aiscore.com/live")
+        driver.get("https://www.aiscore.com")
         
         # Espera longa para garantir que o JavaScript carregue os jogos
         time.sleep(20) 
