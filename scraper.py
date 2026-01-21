@@ -1,12 +1,13 @@
 import os
 import time
+import re
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 
-def buscar_placar_limpo():
+def buscar_apenas_o_jogo():
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
@@ -16,32 +17,36 @@ def buscar_placar_limpo():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
-        print("Acessando página do time...")
+        # Link específico do seu time
         driver.get("https://www.aiscore.com/team-shire-endaselassie-fc/34kgmino3lh8ko9")
         
-        # Tempo para carregar os dados dinâmicos
-        time.sleep(30) 
+        # Tempo de espera para o placar ao vivo carregar
+        time.sleep(45) 
 
-        # No link do time, os jogos ficam geralmente em elementos com a classe 'match-item'
-        # Vamos ser mais específicos para evitar os menus laterais
-        jogos = driver.find_elements(By.CSS_SELECTOR, "div.match-item, a.match-item")
+        # Pega todos os elementos que podem conter o texto do jogo
+        elementos = driver.find_elements(By.XPATH, "//*[contains(text(), 'Shire')]")
         
-        with open("placares.txt", "w", encoding="utf-8") as f:
-            if not jogos:
-                f.write("Jogo não encontrado ou ainda não carregou.")
-            else:
-                for jogo in jogos:
-                    txt = jogo.text.strip().replace("\n", " ")
-                    
-                    # FILTRO DE LIMPEZA:
-                    # Só salva se contiver o nome do time (ou parte dele) e um traço de placar
-                    if "Shire" in txt and "-" in txt:
-                        # Remove palavras indesejadas que costumam aparecer
-                        txt_limpo = txt.replace("Live", "").replace("Schedule", "").strip()
-                        f.write(txt_limpo + "\n")
-                        print(f"Capturado com sucesso: {txt_limpo}")
+        jogos_encontrados = []
 
-        print("Arquivo placares.txt atualizado com o filtro!")
+        for el in elementos:
+            txt = el.text.strip().replace("\n", " ")
+            
+            # FILTRO MESTRE: 
+            # 1. Tem que ter "Shire"
+            # 2. Tem que ter um número, um traço e outro número (placar: 0 - 0)
+            if "Shire" in txt and re.search(r'\d+\s*-\s*\d+', txt):
+                # Limpa palavras de menu que costumam vir grudadas
+                txt_limpo = txt.replace("Live", "").replace("Schedule", "").replace("Finished", "").strip()
+                if txt_limpo not in jogos_encontrados:
+                    jogos_encontrados.append(txt_limpo)
+
+        with open("placares.txt", "w", encoding="utf-8") as f:
+            if jogos_encontrados:
+                for j in jogos_encontrados:
+                    f.write(j + "\n")
+                    print(f"Jogo salvo: {j}")
+            else:
+                f.write("Nenhum placar ao vivo encontrado para este time no momento.")
 
     except Exception as e:
         print(f"Erro: {e}")
@@ -49,4 +54,4 @@ def buscar_placar_limpo():
         driver.quit()
 
 if __name__ == "__main__":
-    buscar_placar_limpo()
+    buscar_apenas_o_jogo()
