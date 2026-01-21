@@ -6,65 +6,59 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 import time
 
-def buscar_placar_time_zed():
+def buscar_agenda_e_ao_vivo():
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    # Disfarce de usuário real para evitar bloqueios do Cloudflare
     options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
     
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
-    # Remove a marca de automação 'webdriver' do navegador
+    # Camuflagem anti-bot
     driver.execute_cdp_cmd("Page.addScriptToEvaluateOnNewDocument", {
         "source": "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
     })
 
     try:
-        # Link da página do time ZED FC
         url = "https://www.aiscore.com/team-zed-fc/63kv9i939ncp7ez"
-        print(f"Acessando página do time...")
+        print("Acessando página do ZED FC...")
         driver.get(url)
         
-        # Espera 45 segundos para o JavaScript carregar os placares ao vivo
-        time.sleep(45) 
+        # 1. Rola a página para baixo para carregar a lista de jogos
+        time.sleep(10)
+        driver.execute_script("window.scrollTo(0, 800);")
+        print("Rolando página para carregar agenda...")
+        time.sleep(30) # Espera o carregamento dos dados dinâmicos
 
         with open("placares.txt", "w", encoding="utf-8") as f:
-            # Estratégia: Localizar o container que contém o nome do time e pegar o texto ao redor
-            try:
-                # Busca blocos de jogos (match-item ou similares)
-                blocos_jogos = driver.find_elements(By.XPATH, "//div[contains(@class, 'match-item')] | //a[contains(@class, 'match-item')]")
-                
-                encontrou_jogo = False
-                for bloco in blocos_jogos:
-                    texto = bloco.text.strip().replace("\n", " ")
-                    # Se o jogo estiver acontecendo, ele terá o nome do time e um placar ou minuto
-                    if "ZED FC" in texto:
-                        f.write(f"JOGO ATUAL: {texto}\n")
-                        print(f"Dados capturados: {texto}")
-                        encontrou_jogo = True
-                
-                if not encontrou_jogo:
-                    # Plano B: Se não achar bloco, pega o texto bruto próximo ao nome do time
-                    conteudo = driver.find_element(By.TAG_NAME, "body").text
-                    if "ZED FC" in conteudo:
-                        # Pega um pedaço do texto onde o nome do time aparece
-                        idx = conteudo.find("ZED FC")
-                        trecho = conteudo[idx-20:idx+100].replace("\n", " ")
-                        f.write(f"TRECHO ENCONTRADO: {trecho}")
-                    else:
-                        f.write("Time ZED FC não localizado na página.")
+            # 2. Busca todos os itens que parecem ser jogos (cards de partida)
+            # No AiScore, os jogos na página do time costumam usar a classe 'match-item'
+            jogos = driver.find_elements(By.CSS_SELECTOR, ".match-item, .match-list-item, [class*='match-item']")
             
-            except Exception as e:
-                f.write(f"Erro ao ler elementos: {str(e)}")
+            if not jogos:
+                f.write("Agenda ou jogo ao vivo não carregou. Tentando captura de texto ampla...\n")
+                # Plano B: Pega todo o texto da área de partidas
+                try:
+                    area_jogos = driver.find_element(By.XPATH, "//div[contains(@class, 'match-list')]").text
+                    f.write(area_jogos)
+                except:
+                    f.write("Não foi possível encontrar a seção de partidas.")
+            else:
+                f.write(f"=== JOGOS E AGENDA ENCONTRADOS ({time.strftime('%H:%M:%S')}) ===\n\n")
+                for jogo in jogos:
+                    texto = jogo.text.strip().replace("\n", " | ")
+                    # Filtra para evitar pegar menus laterais, foca em quem tem 'vs' ou números
+                    if len(texto) > 10:
+                        f.write(texto + "\n")
+                        print(f"Capturado: {texto}")
 
-        print("Arquivo placares.txt atualizado!")
+        print("Finalizado com sucesso!")
 
     except Exception as e:
-        print(f"Erro no driver: {e}")
+        print(f"Erro: {e}")
     finally:
         driver.quit()
 
 if __name__ == "__main__":
-    buscar_placar_time_zed()
+    buscar_agenda_e_ao_vivo()
