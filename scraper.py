@@ -5,65 +5,63 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
 def buscar_placar_exato():
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+    # User-agent mais atualizado para evitar que o site entregue uma página antiga
+    options.add_argument("user-agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
     
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
-        # LINK DO JOGO NEWCASTLE X PSV
-        driver.get("https://www.espn.com.br/futebol/partida/_/jogoId/757776")
+        # Forçamos o link com um parâmetro de tempo para evitar cache do navegador
+        driver.get(f"https://www.espn.com.br/futebol/partida/_/jogoId/757778?refresh={int(time.time())}")
         
-        # Espera técnica para o JavaScript da ESPN renderizar os números reais
-        time.sleep(25) 
+        # Espera o tempo necessário para o placar "subir" na tela
+        time.sleep(30) 
 
-        TIME_A = "Marseille"
-        TIME_B = "Liverpool"
+        TIME_A = "Newcastle"
+        TIME_B = "PSV"
 
-        # 1. BUSCA O TEMPO (MINUTO) - Foca na classe que aparece na sua foto
+        # 1. BUSCA O TEMPO
         tempo = "Início"
         try:
-            tempo_el = driver.find_element(By.CSS_SELECTOR, ".GameStatus__Text, .status-detail")
+            # Tenta pegar o tempo exato que aparece entre os placares
+            tempo_el = driver.find_element(By.CSS_SELECTOR, ".GameStatus__Text, .status-detail, .game-time")
             if tempo_el.text:
                 tempo = tempo_el.text.strip()
         except:
             pass
 
         # 2. BUSCA OS GOLS (PLACAR REAL)
-        # Na ESPN, os gols ficam em classes 'ScoreCell__Score' ou dentro de 'score-container'
+        # Seletor focado na estrutura da Gamestrip (a barra principal da sua foto)
         gols = ["0", "0"]
         try:
-            # Busca especificamente pelos números do placar que aparecem na barra principal
-            elementos_gols = driver.find_elements(By.CSS_SELECTOR, ".ScoreCell__Score")
+            # A ESPN coloca os gols em elementos com a classe 'ScoreCell__Score' 
+            # ou dentro de 'div.score-container'. Vamos pegar todos os que forem números.
+            elementos = driver.find_elements(By.CSS_SELECTOR, "div.ScoreCell__Score, span.ScoreCell__Score, .score-container")
             
-            if len(elementos_gols) >= 2:
-                # Extrai apenas os números (evita pegar nomes ou siglas)
-                placar_real = [el.text.strip() for el in elementos_gols if el.text.strip().isdigit()]
-                if len(placar_real) >= 2:
-                    gols = placar_real[:2]
+            # Filtramos apenas o que é número puro
+            valores = [e.text.strip() for e in elementos if e.text.strip().isdigit()]
+            
+            if len(valores) >= 2:
+                # Pegamos os dois primeiros números encontrados na parte superior
+                gols = valores[:2]
         except:
-            # Backup caso a classe mude: procura por qualquer dígito isolado no cabeçalho
             pass
 
-        gol_casa = gols[0]
-        gol_fora = gols[1]
+        resultado = f"{TIME_A} {gols[0]} X {gols[1]} {TIME_B} | {tempo}"
 
-        resultado = f"{TIME_A} {gol_casa} X {gol_fora} {TIME_B} | {tempo}"
-
-        # Grava o resultado real capturado
+        # Grava o arquivo
         with open("placares.txt", "w", encoding="utf-8") as f:
             f.write(resultado)
-            print(f"Sucesso: {resultado}")
+            print(f"ATUALIZADO: {resultado}")
 
     except Exception as e:
-        print(f"Erro ao capturar: {e}")
+        print(f"Erro: {e}")
     finally:
         driver.quit()
 
