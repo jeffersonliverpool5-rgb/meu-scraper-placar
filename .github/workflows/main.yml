@@ -1,4 +1,4 @@
-name: Scraper Live Posicional
+name: Scraper Live Especifico
 
 on:
   schedule:
@@ -28,5 +28,5 @@ jobs:
           git config --global user.name "Bot Placar"
           git config --global user.email "bot@github.com"
           git add placares.txt
-          git commit -m "Update: $(cat placares.txt | head -n 1)" || exit 0
+          git commit -m "Update: $(cat placares.txt)" || exit 0
           git push
