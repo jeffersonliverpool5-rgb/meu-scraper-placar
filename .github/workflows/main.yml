@@ -2,8 +2,8 @@ name: Atualizar Placares AiScore
 
 on:
   schedule:
-    - cron: '*/30 * * * *' # Roda a cada 30 minutos
-  workflow_dispatch:      # Permite rodar manualmente clicando em um botão
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -17,9 +17,10 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Instalar Dependências e Chrome
+      - name: Instalar Selenium e Chrome
         run: |
-          pip install -r requirements.txt
+          python -m pip install --upgrade pip
+          pip install selenium webdriver-manager
           sudo apt-get update
           sudo apt-get install google-chrome-stable
 
@@ -31,5 +32,5 @@ jobs:
           git config --global user.name "GitHub Action"
           git config --global user.email "action@github.com"
           git add placares.txt
-          git commit -m "Atualizando placares: $(date)" || exit 0
+          git commit -m "Atualizando placares" || exit 0
           git push
