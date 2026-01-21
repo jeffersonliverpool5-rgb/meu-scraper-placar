@@ -1,50 +1,60 @@
 import os
 import time
+import re
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 
-def buscar_jogos_definitivo():
+def buscar_jogo_ao_vivo_certeiro():
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    # User-agent para parecer um PC real
     options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
     
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
+    # --- CONFIGURAÇÃO ---
+    TIME_ALVO = "Ceramica" 
+    LINK = "https://www.aiscore.com/team-ceramica-cleopatra-fc/ndkz6i99r6teq3z"
+    # --------------------
+
     try:
-        print("Acessando AiScore...")
-        driver.get("https://www.aiscore.com/team-cd-fas-reserves/edq09ip2z4i4qxg")
-        
-        # Espera longa para carregar os placares do meio
+        print(f"Buscando jogo AO VIVO: {TIME_ALVO}")
+        driver.get(LINK)
         time.sleep(45) 
 
-        # Tenta capturar TODOS os elementos que podem ser jogos
+        # Usa o XPATH que você validou que pega tudo
         elementos = driver.find_elements(By.XPATH, "//div[contains(@class, 'match')] | //div[contains(@class, 'item')]")
         
-        with open("placares.txt", "w", encoding="utf-8") as f:
-            if not elementos:
-                # Se não achou nada por classe, pega o TEXTO PURO da página inteira
-                print("Tentando captura por texto bruto...")
-                texto_pagina = driver.find_element(By.TAG_NAME, "body").text
-                f.write(texto_pagina)
-            else:
-                for el in elementos:
-                    txt = el.text.strip().replace("\n", " ")
-                    # Filtra apenas o que tem cara de jogo (ex: contém " - " ou " vs ")
-                    if len(txt) > 20 and ("-" in txt or "vs" in txt or ":" in txt):
-                        f.write(txt + "\n")
+        linha_viva = ""
 
-        print("Processo finalizado. Verifique o arquivo!")
+        for el in elementos:
+            texto = el.text.strip().replace("\n", " ")
+            
+            # FILTRO: Nome do time + (Minutagem ou HT)
+            # Isso garante que pegue 1º tempo, 2º tempo e intervalo
+            if TIME_ALVO in texto and (re.search(r"\d+'", texto) or "HT" in texto):
+                linha_viva = texto
+                break 
+
+        with open("placares.txt", "w", encoding="utf-8") as f:
+            if linha_viva:
+                # Limpa a linha tirando o excesso de espaços
+                resultado = " ".join(linha_viva.split())
+                f.write(resultado + "\n")
+                print(f"CAPTURADO: {resultado}")
+            else:
+                f.write(f"Aguardando o inicio do jogo ou intervalo do {TIME_ALVO}...\n")
+
+        print("Finalizado.")
 
     except Exception as e:
-        print(f"Erro fatal: {e}")
+        print(f"Erro: {e}")
     finally:
         driver.quit()
 
 if __name__ == "__main__":
-    buscar_jogos_definitivo()
+    buscar_jogo_ao_vivo_certeiro()
