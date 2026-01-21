@@ -19,13 +19,13 @@ def buscar_placar_exato():
     
     try:
         # LINK DO JOGO NEWCASTLE X PSV
-        driver.get("https://www.espn.com.br/futebol/partida/_/jogoId/757777")
+        driver.get("https://www.espn.com.br/futebol/partida/_/jogoId/757776")
         
         # Espera técnica para o JavaScript da ESPN renderizar os números reais
         time.sleep(25) 
 
-        TIME_A = "Newcastle"
-        TIME_B = "PSV"
+        TIME_A = "Marseille"
+        TIME_B = "Liverpool"
 
         # 1. BUSCA O TEMPO (MINUTO) - Foca na classe que aparece na sua foto
         tempo = "Início"
