@@ -1,8 +1,8 @@
-name: Scraper Live Organizado
+name: Scraper Live Focado
 
 on:
   schedule:
-    - cron: '*/5 * * * *' # A cada 5 minutos
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -28,6 +28,5 @@ jobs:
           git config --global user.name "Bot Placar"
           git config --global user.email "bot@github.com"
           git add placares.txt
-          # O commit vai mostrar o placar no histórico
           git commit -m "Update: $(cat placares.txt)" || exit 0
           git push
