@@ -1,11 +1,12 @@
 import time
+import re
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 
-def buscar_espn_viva():
+def buscar_organizado():
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
@@ -15,24 +16,41 @@ def buscar_espn_viva():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
-        print("Acessando partida na ESPN...")
-        driver.get("https://www.espn.com.br/futebol/partida/_/jogoId/757770")
-        
-        # Espera o site carregar
+        # COLOQUE O LINK DO JOGO AQUI
+        driver.get("https://www.espn.com.br/futebol/partida/_/jogoId/757771")
         time.sleep(30)
         
-        # Rola a página um pouco para garantir que o placar carregue
-        driver.execute_script("window.scrollTo(0, 300);")
-        time.sleep(5)
-
-        # CAPTURA TUDO (Sua rede de arrastão favorita)
-        texto_completo = driver.find_element(By.TAG_NAME, "body").text
+        # Pega o topo da página onde estão os dados principais
+        texto = driver.find_element(By.TAG_NAME, "body").text.split('\n')[:50]
         
-        # Salva o texto bruto para o GitHub limpar depois
+        times = []
+        placar = []
+        tempo = ""
+
+        for linha in texto:
+            linha = linha.strip()
+            # 1. Identifica o tempo (Ex: 45', HT, Fim)
+            if "'" in linha or "HT" in linha or "Fim" in linha or "FIM" in linha:
+                tempo = linha
+            # 2. Identifica o placar (Números isolados de 0 a 9)
+            elif re.match(r"^[0-9]$", linha):
+                placar.append(linha)
+            # 3. Identifica os nomes dos times (Ignora lixo como 'PTS', 'Estatísticas', etc)
+            elif len(linha) > 2 and not any(x in linha for x in ["PTS", "Estatísticas", "ATA", "ATH", "Vídeo"]):
+                if len(times) < 2: # Pega apenas os dois primeiros nomes que sobrarem
+                    times.append(linha)
+
+        # MONTA A LINHA ÚNICA
+        if len(times) >= 2 and len(placar) >= 2:
+            linha_final = f"{times[0]} {placar[0]} - {placar[1]} {times[1]} | {tempo}"
+        elif len(times) >= 2:
+            linha_final = f"{times[0]} vs {times[1]} | {tempo}"
+        else:
+            linha_final = "Aguardando dados da partida..."
+
         with open("placares.txt", "w", encoding="utf-8") as f:
-            f.write(texto_completo)
-            
-        print("Texto capturado com sucesso!")
+            f.write(linha_final)
+            print(f"Linha Organizada: {linha_final}")
 
     except Exception as e:
         print(f"Erro: {e}")
@@ -40,4 +58,4 @@ def buscar_espn_viva():
         driver.quit()
 
 if __name__ == "__main__":
-    buscar_espn_viva()
+    buscar_organizado()
