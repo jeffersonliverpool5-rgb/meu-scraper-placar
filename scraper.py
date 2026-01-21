@@ -19,7 +19,7 @@ def buscar_aiscore():
     
     try:
         print("Abrindo AiScore Live...")
-        driver.get("https://www.aiscore.com/live")
+        driver.get("https://www.aiscore.com")
         
         # Espera até 20 segundos para a página carregar os jogos
         wait = WebDriverWait(driver, 20)
