@@ -1,13 +1,12 @@
 import time
+import re
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 
-def buscar_dados_ge():
+def extrair_bruto_ge():
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
@@ -15,43 +14,47 @@ def buscar_dados_ge():
     options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
     
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    wait = WebDriverWait(driver, 25) # Espera até 25 segundos
     
     try:
+        # Acessa o link do jogo
         driver.get("https://ge.globo.com/sp/futebol/campeonato-paulista/jogo/21-01-2026/sao-paulo-portuguesa.ghtml")
         
-        # Espera o elemento do tempo (a classe da área azul) estar visível
-        wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "placar-jogo__periodo")))
+        # Espera generosa para o site carregar tudo
+        time.sleep(30)
 
-        # 1. PEGAR OS GOLS
-        gols = driver.find_elements(By.CLASS_NAME, "placar-jogo__equipe--placar")
-        gol_casa = gols[0].text.strip() if len(gols) > 0 else "0"
-        gol_fora = gols[1].text.strip() if len(gols) > 1 else "0"
-
-        # 2. PEGAR O TEMPO (28:23 1T)
-        # Usamos uma busca mais ampla caso a classe mude
-        try:
-            tempo_el = driver.find_element(By.CSS_SELECTOR, ".placar-jogo__periodo, .tempo-jogo")
-            tempo = tempo_el.text.replace("\n", " ").strip()
-        except:
-            tempo = "Em andamento"
-
-        # 3. PEGAR NOMES
-        nomes = driver.find_elements(By.CLASS_NAME, "placar-jogo__equipe--nome")
-        time_a = nomes[0].text.strip() if len(nomes) > 0 else "SAO"
-        time_b = nomes[1].text.strip() if len(nomes) > 1 else "POR"
-
-        resultado = f"{time_a} {gol_casa} X {gol_fora} {time_b} | {tempo}"
+        # CAPTURA TODO O TEXTO DA PÁGINA
+        conteudo_total = driver.find_element(By.TAG_NAME, "body").text
         
+        # FILTRAGEM DOS DADOS (Busca por padrões no texto bruto)
+        
+        # 1. Busca o Tempo (Ex: 28:23 1T)
+        busca_tempo = re.search(r"(\d{1,2}:\d{2}\s[12]T|Intervalo|Fim de jogo|Encerrado)", conteudo_total)
+        tempo = busca_tempo.group(0) if busca_tempo else "Tempo não detectado"
+
+        # 2. Busca o Placar (Gols)
+        # No GE, os gols aparecem isolados no topo. Vamos tentar capturar os elementos do placar primeiro
+        try:
+            gols = driver.find_elements(By.CLASS_NAME, "placar-jogo__equipe--placar")
+            gol_casa = gols[0].text.strip()
+            gol_fora = gols[1].text.strip()
+        except:
+            # Se falhar, tenta achar números isolados perto dos nomes dos times
+            gol_casa = "0"
+            gol_fora = "0"
+
+        # MONTAGEM DA LINHA BRUTA
+        resultado = f"SAO {gol_casa} X {gol_fora} POR | {tempo}"
+        
+        # Salva no arquivo para o GitHub
         with open("placares.txt", "w", encoding="utf-8") as f:
             f.write(resultado)
             
-        print(f"Sucesso: {resultado}")
+        print(f"Extração Concluída: {resultado}")
 
     except Exception as e:
-        print(f"Erro ao capturar: {e}")
+        print(f"Erro na extração: {e}")
     finally:
         driver.quit()
 
 if __name__ == "__main__":
-    buscar_dados_ge()
+    extrair_bruto_ge()
