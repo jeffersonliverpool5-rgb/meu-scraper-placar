@@ -16,7 +16,7 @@ def extrair_na_marra():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
-        driver.get("https://ge.globo.com/rs/futebol/campeonato-gaucho/jogo/21-01-2026/internacional-inter-sm.ghtml")
+        driver.get("https://ge.globo.com/sp/futebol/campeonato-paulista/jogo/21-01-2026/sao-paulo-portuguesa.ghtml")
         
         # Espera o carregamento total (aumentado para 40s)
         time.sleep(40)
