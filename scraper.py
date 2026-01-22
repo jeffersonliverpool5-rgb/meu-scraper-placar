@@ -15,7 +15,7 @@ def extrair_aiscore():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
-        url = "https://www.aiscore.com/match-capital-cf-real-fc/ezk96i369dxu1kn"
+        url = "https://www.aiscore.com/match-tirol-ceara/vrqwni49g05u4qn"
         driver.get(url)
         
         # Espera generosa para garantir o carregamento do conteúdo dinâmico
@@ -27,7 +27,7 @@ def extrair_aiscore():
             time_casa = driver.find_element(By.XPATH, "//div[contains(@class, 'home-team')]//a[contains(@class, 'name')]").text.strip()
             time_fora = driver.find_element(By.XPATH, "//div[contains(@class, 'away-team')]//a[contains(@class, 'name')]").text.strip()
         except:
-            time_casa, time_fora = "Capital CF", "Real FC"
+            time_casa, time_fora = "TIROL", "CEARA"
 
         # 2. Busca o Placar (Gols)
         try:
