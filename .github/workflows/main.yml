@@ -1,37 +1,12 @@
-name: Scraper AiScore
-
-on:
-  schedule:
-    - cron: '*/2 * * * *'
-  workflow_dispatch:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write # Essencial para permitir o push do bot
-    steps:
-      - name: Checkout Código
-        uses: actions/checkout@v3
-
-      - name: Instalar Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
-
-      - name: Instalar Dependências
+- name: Executar Scrapers
         run: |
-          sudo apt-get update
-          sudo apt-get install -y google-chrome-stable
-          pip install selenium webdriver-manager
+          python scraper.py
+          python relogio.py
 
-      - name: Executar Scraper
-        run: python scraper.py
-
-      - name: Salvar Resultado
+      - name: Git Push
         run: |
-          git config --global user.name "AiScore Bot"
-          git config --global user.email "bot@aiscore.com"
+          git config --global user.name "Bot Placar"
+          git config --global user.email "bot@scrap.com"
           git add placares.txt
-          git commit -m "Update Placar: $(cat placares.txt)" || exit 0
+          git commit -m "Update: $(cat placares.txt)" || exit 0
           git push
