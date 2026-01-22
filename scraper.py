@@ -18,13 +18,13 @@ def extrair_aiscore():
         url = "https://www.aiscore.com/match-argentinos-juniors-ferrocarril-midland/34kgmio142waeko"
         driver.get(url)
         
-        # Espera o carregamento (AiScore é pesado)
-        time.sleep(15)
+        # Espera o carregamento dos elementos dinâmicos
+        time.sleep(20)
 
-        # 1. Nomes dos Times
+        # 1. Nomes dos Times (Seletores estáveis)
         try:
-            time_casa = driver.find_element(By.XPATH, "//div[contains(@class, 'home-team')]//a[contains(@class, 'name')]").text.strip()
-            time_fora = driver.find_element(By.XPATH, "//div[contains(@class, 'away-team')]//a[contains(@class, 'name')]").text.strip()
+            time_casa = driver.find_element(By.CSS_SELECTOR, ".home-team .name").text.strip()
+            time_fora = driver.find_element(By.CSS_SELECTOR, ".away-team .name").text.strip()
         except:
             time_casa, time_fora = "Argentinos Jrs", "Midland"
 
@@ -35,30 +35,43 @@ def extrair_aiscore():
         except:
             g1, g2 = "0", "0"
 
-        # 3. TEMPO REAL (Cronômetro)
-        tempo_jg = ""
+        # 3. BUSCA DO TEMPO (Ajustada)
+        tempo_jg = "Ao Vivo"
         try:
-            # Tenta pegar o cronômetro ativo (ex: 34')
-            tempo_jg = driver.find_element(By.CSS_SELECTOR, ".score-status .status-time").text.strip()
+            # Tenta pegar o container que envolve o tempo e o status
+            bloco_tempo = driver.find_element(By.CLASS_NAME, "score-status").text
+            
+            # Limpa o texto (remove quebras de linha e espaços extras)
+            linhas = [lin.strip() for lin in bloco_tempo.split('\n') if lin.strip()]
+            
+            # Geralmente o tempo é a linha que tem o minuto (ex: 40') ou "HT" ou "Half-time"
+            # Vamos tentar pegar o que for mais relevante
+            if len(linhas) > 0:
+                # Se a primeira linha for o placar (ex: 1 - 0), tentamos a segunda
+                if "-" in linhas[0] and len(linhas) > 1:
+                    tempo_jg = linhas[1]
+                else:
+                    tempo_jg = linhas[0]
         except:
-            try:
-                # Se não achar o anterior, tenta o status geral (pode ser "Half-time", "Finished")
-                tempo_jg = driver.find_element(By.CSS_SELECTOR, ".score-status .status").text.strip()
-            except:
-                tempo_jg = "Andamento"
+            tempo_jg = "Andamento"
 
-        # Limpeza para evitar quebras de linha
-        tempo_jg = tempo_jg.replace("\n", " ").strip()
-        if not tempo_jg: tempo_jg = "Vivo"
+        # Se o tempo vier como "Half-time", vamos abreviar para ficar bonito
+        status_map = {
+            "Half-time": "Intervalo",
+            "Finished": "Fim",
+            "Ended": "Fim",
+            "Waiting": "Aguardando"
+        }
+        tempo_jg = status_map.get(tempo_jg, tempo_jg)
 
-        # Montagem da Linha
+        # Montagem Final
         resultado = f"{time_casa} {g1} X {g2} {time_fora} | {tempo_jg}"
-        resultado = " ".join(resultado.split())
+        resultado = " ".join(resultado.split()) # Remove espaços duplos
 
         with open("placares.txt", "w", encoding="utf-8") as f:
             f.write(resultado)
             
-        print(f"DEBUG: {resultado}")
+        print(f"CAPTURA FINAL: {resultado}")
 
     except Exception as e:
         with open("placares.txt", "w", encoding="utf-8") as f:
