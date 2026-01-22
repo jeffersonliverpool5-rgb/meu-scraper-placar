@@ -16,7 +16,7 @@ def extrair_na_marra():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
-        driver.get("https://ge.globo.com/mg/futebol/campeonato-mineiro/jogo/21-01-2026/america-mg-atletico-mg.ghtml")
+        driver.get("https://ge.globo.com/rj/futebol/campeonato-carioca/jogo/21-01-2026/flamengo-vasco.ghtml")
         
         # Espera o carregamento total (aumentado para 40s)
         time.sleep(40)
@@ -27,7 +27,7 @@ def extrair_na_marra():
             g1 = placar_bruto[0].text.strip()
             g2 = placar_bruto[1].text.strip()
         except:
-            g1, g2 = "0", "0"
+            g1, g2 = "", ""
 
         # 2. BUSCA DO TEMPO (A "MERDA" QUE VAMOS TIRAR)
         # Se não achar o tempo específico, ele vai varrer a página atrás de algo como "28:23" ou "30'"
