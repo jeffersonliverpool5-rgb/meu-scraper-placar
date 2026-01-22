@@ -1,1 +1,1 @@
-INT 0 X 0 ISM | 45'
+INT 0 X 0 ISM | 23:35
