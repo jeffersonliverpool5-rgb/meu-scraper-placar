@@ -15,67 +15,50 @@ def extrair_aiscore():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
-        url = "https://www.aiscore.com/match-argentinos-juniors-ferrocarril-midland/34kgmio142waeko"
+        url = "https://www.aiscore.com/match-cr-flamengo-clube-de-regatas-vasco-da-gama/jr7owipdz1lsgq0"
         driver.get(url)
         
-        # Espera o carregamento dos elementos dinâmicos
-        time.sleep(20)
+        # Espera generosa para garantir o carregamento do conteúdo dinâmico
+        time.sleep(15)
 
-        # 1. Nomes dos Times (Seletores estáveis)
+        # 1. Busca os nomes dos times dentro do container de cabeçalho
         try:
-            time_casa = driver.find_element(By.CSS_SELECTOR, ".home-team .name").text.strip()
-            time_fora = driver.find_element(By.CSS_SELECTOR, ".away-team .name").text.strip()
+            # Usando caminhos mais específicos para não pegar nomes de jogadores
+            time_casa = driver.find_element(By.XPATH, "//div[contains(@class, 'home-team')]//a[contains(@class, 'name')]").text.strip()
+            time_fora = driver.find_element(By.XPATH, "//div[contains(@class, 'away-team')]//a[contains(@class, 'name')]").text.strip()
         except:
-            time_casa, time_fora = "Argentinos Jrs", "Midland"
+            time_casa, time_fora = "CR Flamengo", "Clube de Regatas Vasco da Gama"
 
-        # 2. Placar
+        # 2. Busca o Placar (Gols)
         try:
             g1 = driver.find_element(By.CLASS_NAME, "home-score").text.strip()
             g2 = driver.find_element(By.CLASS_NAME, "away-score").text.strip()
         except:
             g1, g2 = "0", "0"
 
-        # 3. BUSCA DO TEMPO (Ajustada)
-        tempo_jg = "Ao Vivo"
+        # 3. Busca o Tempo do Jogo (Status central)
         try:
-            # Tenta pegar o container que envolve o tempo e o status
-            bloco_tempo = driver.find_element(By.CLASS_NAME, "score-status").text
-            
-            # Limpa o texto (remove quebras de linha e espaços extras)
-            linhas = [lin.strip() for lin in bloco_tempo.split('\n') if lin.strip()]
-            
-            # Geralmente o tempo é a linha que tem o minuto (ex: 40') ou "HT" ou "Half-time"
-            # Vamos tentar pegar o que for mais relevante
-            if len(linhas) > 0:
-                # Se a primeira linha for o placar (ex: 1 - 0), tentamos a segunda
-                if "-" in linhas[0] and len(linhas) > 1:
-                    tempo_jg = linhas[1]
-                else:
-                    tempo_jg = linhas[0]
+            # No AiScore, o tempo fica geralmente num elemento de classe 'status' ou 'period'
+            tempo_jg = driver.find_element(By.CSS_SELECTOR, ".score-status .status").text.strip()
+            # Se vier vazio ou com quebra de linha, limpamos
+            tempo_jg = tempo_jg.replace("\n", " ")
         except:
-            tempo_jg = "Andamento"
+            tempo_jg = "Ao Vivo"
 
-        # Se o tempo vier como "Half-time", vamos abreviar para ficar bonito
-        status_map = {
-            "Half-time": "Intervalo",
-            "Finished": "Fim",
-            "Ended": "Fim",
-            "Waiting": "Aguardando"
-        }
-        tempo_jg = status_map.get(tempo_jg, tempo_jg)
-
-        # Montagem Final
+        # MONTAGEM DA LINHA FINAL
         resultado = f"{time_casa} {g1} X {g2} {time_fora} | {tempo_jg}"
-        resultado = " ".join(resultado.split()) # Remove espaços duplos
+        
+        # Limpeza final de strings
+        resultado = " ".join(resultado.split())
 
         with open("placares.txt", "w", encoding="utf-8") as f:
             f.write(resultado)
             
-        print(f"CAPTURA FINAL: {resultado}")
+        print(f"CAPTURA OK: {resultado}")
 
     except Exception as e:
         with open("placares.txt", "w", encoding="utf-8") as f:
-            f.write(f"Erro na captura")
+            f.write(f"Erro na captura: {str(e)}")
     finally:
         driver.quit()
 
