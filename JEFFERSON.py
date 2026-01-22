@@ -15,7 +15,7 @@ def extrair_aiscore():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
-        url = "https://www.aiscore.com/match-inter-f-a-fuerte-san-francisco/69759igly5gugk2"
+        url = "https://www.aiscore.com/match-guangdong-wuchuan-youth-ningxia-pingluo-hengli/9gklzi14y39am7x"
         driver.get(url)
         
         # Espera generosa para garantir o carregamento do conteúdo dinâmico
@@ -27,7 +27,7 @@ def extrair_aiscore():
             time_casa = driver.find_element(By.XPATH, "//div[contains(@class, 'home-team')]//a[contains(@class, 'name')]").text.strip()
             time_fora = driver.find_element(By.XPATH, "//div[contains(@class, 'away-team')]//a[contains(@class, 'name')]").text.strip()
         except:
-            time_casa, time_fora = "Inter F.A","Fuerte San Francisco"
+            time_casa, time_fora = "Guangdong Wuchuan Youth","Ningxia Pingluo Hengli"
 
         # 2. Busca o Placar (Gols)
         try:
