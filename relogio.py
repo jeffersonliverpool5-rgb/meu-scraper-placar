@@ -6,34 +6,64 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 
-def extrair_relogio():
+def extrair_na_marra():
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
     options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
     
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
-        driver.get("https://ge.globo.com/rj/futebol/campeonato-carioca/jogo/21-01-2026/flamengo-vasco.ghtml")
-        time.sleep(35) # Espera o relógio carregar bem
+        driver.get("https://ge.globo.com/mg/futebol/campeonato-mineiro/jogo/21-01-2026/america-mg-atletico-mg.ghtml")
+        
+        # Espera o carregamento total (aumentado para 40s)
+        time.sleep(40)
 
+        # 1. Pega os nomes e placar pelos seletores mais básicos do GE
+        try:
+            placar_bruto = driver.find_elements(By.CLASS_NAME, "placar-jogo__equipe--placar")
+            g1 = placar_bruto[0].text.strip()
+            g2 = placar_bruto[1].text.strip()
+        except:
+            g1, g2 = "", ""
+
+        # 2. BUSCA DO TEMPO (A "MERDA" QUE VAMOS TIRAR)
+        # Se não achar o tempo específico, ele vai varrer a página atrás de algo como "28:23" ou "30'"
+        tempo_final = "Andamento"
+        
+        # Pega todo o texto da página
         todo_texto = driver.find_element(By.TAG_NAME, "body").text
+        
+        # Procura o padrão de tempo (ex: 28:23 1T ou apenas 28:23)
         match = re.search(r"(\d{1,2}:\d{2}(\s[12]T)?)|(\d{1,2}')", todo_texto)
         
-        tempo_final = match.group(0) if match else "Ao Vivo"
+        if match:
+            tempo_final = match.group(0)
+        else:
+            # Se ainda assim não achar, tenta pegar o texto do elemento de período do GE
+            try:
+                tempo_final = driver.find_element(By.CLASS_NAME, "placar-jogo__periodo").text.replace("\n", " ")
+            except:
+                tempo_final = "Ao Vivo"
 
-        # O SEGREDO: "a" abre para anexar. O " | " separa o tempo do placar.
-        with open("placares.txt", "a", encoding="utf-8") as f:
-            f.write(f" | {tempo_final}")
+        # MONTAGEM DA LINHA ÚNICA
+        resultado = f"{g1}  {g2}  | {tempo_final}"
+        
+        # Limpa qualquer quebra de linha indesejada
+        resultado = resultado.replace("\n", "").strip()
+
+        with open("placares.txt", "w", encoding="utf-8") as f:
+            f.write(resultado)
             
-        print(f"Tempo adicionado: {tempo_final}")
+        print(f"DEBUG TEXTO COMPLETO: {resultado}")
 
     except Exception as e:
-        with open("placares.txt", "a", encoding="utf-8") as f:
-            f.write(" | --:--")
+        with open("placares.txt", "w", encoding="utf-8") as f:
+            f.write(f" | Erro na Captura")
     finally:
         driver.quit()
 
 if __name__ == "__main__":
-    extrair_relogio()
+    extrair_na_marra()
