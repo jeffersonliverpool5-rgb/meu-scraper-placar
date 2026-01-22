@@ -15,50 +15,59 @@ def extrair_aiscore():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
-        url = "https://www.aiscore.com/match-cr-flamengo-clube-de-regatas-vasco-da-gama/jr7owipdz1lsgq0"
+        url = "https://www.aiscore.com/match-argentinos-juniors-ferrocarril-midland/34kgmio142waeko"
         driver.get(url)
         
-        # Espera generosa para garantir o carregamento do conteúdo dinâmico
-        time.sleep(15)
+        # Aumentamos o tempo para garantir que o cronômetro carregue
+        time.sleep(25)
 
-        # 1. Busca os nomes dos times dentro do container de cabeçalho
+        # 1. Nomes dos Times
         try:
-            # Usando caminhos mais específicos para não pegar nomes de jogadores
-            time_casa = driver.find_element(By.XPATH, "//div[contains(@class, 'home-team')]//a[contains(@class, 'name')]").text.strip()
-            time_fora = driver.find_element(By.XPATH, "//div[contains(@class, 'away-team')]//a[contains(@class, 'name')]").text.strip()
+            casa = driver.find_element(By.CSS_SELECTOR, ".home-team .name").text.strip()
+            fora = driver.find_element(By.CSS_SELECTOR, ".away-team .name").text.strip()
         except:
-            time_casa, time_fora = "CR Flamengo", "Clube de Regatas Vasco da Gama"
+            casa, fora = "Argentinos Jrs", "Midland"
 
-        # 2. Busca o Placar (Gols)
+        # 2. Placar
         try:
             g1 = driver.find_element(By.CLASS_NAME, "home-score").text.strip()
             g2 = driver.find_element(By.CLASS_NAME, "away-score").text.strip()
         except:
             g1, g2 = "0", "0"
 
-        # 3. Busca o Tempo do Jogo (Status central)
+        # 3. BUSCA DO TEMPO (Usando JavaScript para garantir a captura)
+        tempo_jg = "Ao Vivo"
         try:
-            # No AiScore, o tempo fica geralmente num elemento de classe 'status' ou 'period'
-            tempo_jg = driver.find_element(By.CSS_SELECTOR, ".score-status .status").text.strip()
-            # Se vier vazio ou com quebra de linha, limpamos
-            tempo_jg = tempo_jg.replace("\n", " ")
+            # Esse seletor busca exatamente a div que fica entre os scores
+            elemento_tempo = driver.find_element(By.CSS_SELECTOR, ".score-status")
+            
+            # O script abaixo pega todo o texto visível dentro dessa div, ignorando o placar
+            texto_bruto = driver.execute_script("return arguments[0].innerText;", elemento_tempo)
+            
+            # O texto vem tipo "1 - 0\n45'" ou "1 - 0\nHT"
+            # Vamos pegar apenas a parte que contém o minuto ou o status
+            partes = texto_bruto.split('\n')
+            if len(partes) > 1:
+                tempo_jg = partes[1].strip() # Pega a segunda linha (onde fica o tempo)
+            else:
+                tempo_jg = partes[0].strip()
         except:
-            tempo_jg = "Ao Vivo"
+            tempo_jg = "Andamento"
 
-        # MONTAGEM DA LINHA FINAL
-        resultado = f"{time_casa} {g1} X {g2} {time_fora} | {tempo_jg}"
+        # Tradução rápida
+        if "Half-time" in tempo_jg: tempo_jg = "Intervalo"
+        if "Finished" in tempo_jg: tempo_jg = "Fim"
+
+        resultado = f"{casa} {g1} X {g2} {fora} | {tempo_jg}"
         
-        # Limpeza final de strings
-        resultado = " ".join(resultado.split())
-
         with open("placares.txt", "w", encoding="utf-8") as f:
             f.write(resultado)
             
-        print(f"CAPTURA OK: {resultado}")
+        print(f"DEBUG: {resultado}")
 
     except Exception as e:
         with open("placares.txt", "w", encoding="utf-8") as f:
-            f.write(f"Erro na captura: {str(e)}")
+            f.write(f"Erro: {str(e)}")
     finally:
         driver.quit()
 
