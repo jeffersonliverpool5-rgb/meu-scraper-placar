@@ -5,8 +5,10 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
-def extrair_na_marra():
+def extrair_aiscore():
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
@@ -16,54 +18,48 @@ def extrair_na_marra():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
-        driver.get("https://ge.globo.com/sp/futebol/campeonato-paulista/jogo/21-01-2026/sao-paulo-portuguesa.ghtml")
+        url = "https://www.aiscore.com/match-argentinos-juniors-ferrocarril-midland/34kgmio142waeko"
+        driver.get(url)
         
-        # Espera o carregamento total (aumentado para 40s)
-        time.sleep(40)
+        # Espera até que o placar esteja visível (máximo 30s)
+        wait = WebDriverWait(driver, 30)
+        
+        # Captura Nomes dos Times
+        # O AiScore costuma usar a classe 'name' dentro do bloco de equipe
+        times = driver.find_elements(By.CLASS_NAME, "name")
+        time_casa = times[0].text.strip() if len(times) > 0 else "Casa"
+        time_fora = times[1].text.strip() if len(times) > 1 else "Fora"
 
-        # 1. Pega os nomes e placar pelos seletores mais básicos do GE
+        # Captura Placar
         try:
-            placar_bruto = driver.find_elements(By.CLASS_NAME, "placar-jogo__equipe--placar")
-            g1 = placar_bruto[0].text.strip()
-            g2 = placar_bruto[1].text.strip()
+            # Busca pelo container de score que geralmente tem a classe 'score'
+            g1 = driver.find_element(By.CLASS_NAME, "home-score").text.strip()
+            g2 = driver.find_element(By.CLASS_NAME, "away-score").text.strip()
         except:
             g1, g2 = "0", "0"
 
-        # 2. BUSCA DO TEMPO (A "MERDA" QUE VAMOS TIRAR)
-        # Se não achar o tempo específico, ele vai varrer a página atrás de algo como "28:23" ou "30'"
-        tempo_final = "Andamento"
-        
-        # Pega todo o texto da página
-        todo_texto = driver.find_element(By.TAG_NAME, "body").text
-        
-        # Procura o padrão de tempo (ex: 28:23 1T ou apenas 28:23)
-        match = re.search(r"(\d{1,2}:\d{2}(\s[12]T)?)|(\d{1,2}')", todo_texto)
-        
-        if match:
-            tempo_final = match.group(0)
-        else:
-            # Se ainda assim não achar, tenta pegar o texto do elemento de período do GE
-            try:
-                tempo_final = driver.find_element(By.CLASS_NAME, "placar-jogo__periodo").text.replace("\n", " ")
-            except:
-                tempo_final = "Ao Vivo"
+        # Captura Tempo do Jogo
+        try:
+            # Procura pela classe de status ou tempo (comum no AiScore: 'status' ou 'time')
+            tempo_jogo = driver.find_element(By.CLASS_NAME, "status").text.strip()
+        except:
+            tempo_jogo = "Andamento"
 
-        # MONTAGEM DA LINHA ÚNICA
-        resultado = f"INT {g1} X {g2} ISM | {tempo_final}"
-        
-        # Limpa qualquer quebra de linha indesejada
+        # Montagem da Linha Única
+        resultado = f"{time_casa} {g1} X {g2} {time_fora} | {tempo_jogo}"
         resultado = resultado.replace("\n", "").strip()
 
         with open("placares.txt", "w", encoding="utf-8") as f:
             f.write(resultado)
             
-        print(f"DEBUG TEXTO COMPLETO: {resultado}")
+        print(f"SUCESSO: {resultado}")
 
     except Exception as e:
+        print(f"Erro: {e}")
         with open("placares.txt", "w", encoding="utf-8") as f:
-            f.write(f"INT 0 X 0 ISM | Erro na Captura")
+            f.write(f"Erro na captura dos dados")
     finally:
         driver.quit()
 
 if __name__ == "__main__":
-    extrair_na_marra()
+    extrair_aiscore()
