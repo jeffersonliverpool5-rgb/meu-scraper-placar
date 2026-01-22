@@ -15,7 +15,7 @@ def extrair_aiscore():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
-        url = "https://www.aiscore.com/match-inter-f-a-fuerte-san-francisco/69759igly5gugk2"
+        url = "https://www.aiscore.com/match-cs-cartagines-ld-alajuelense/69759igz4mnigk2"
         driver.get(url)
         
         # Espera generosa para garantir o carregamento do conteúdo dinâmico
