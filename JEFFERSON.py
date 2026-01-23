@@ -1,66 +1,49 @@
-import time
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.chrome import ChromeDriverManager
+import time
 
-def extrair_aiscore():
-    options = Options()
-    options.add_argument("--headless")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+def extrair_dados_partida():
+    url = "https://www.aiscore.com/match-bsrc-indera-fc/ndkz6i3lgg6hxq3"
     
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    
+    # Configurações do Navegador (Modo Headless para não abrir janela)
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+
     try:
-        url = "https://www.aiscore.com/match-capital-cf-real-fc/ezk96i369dxu1kn"
         driver.get(url)
         
-        # Espera generosa para garantir o carregamento do conteúdo dinâmico
-        time.sleep(15)
-
-        # 1. Busca os nomes dos times dentro do container de cabeçalho
-        try:
-            # Usando caminhos mais específicos para não pegar nomes de jogadores
-            time_casa = driver.find_element(By.XPATH, "//div[contains(@class, 'home-team')]//a[contains(@class, 'name')]").text.strip()
-            time_fora = driver.find_element(By.XPATH, "//div[contains(@class, 'away-team')]//a[contains(@class, 'name')]").text.strip()
-        except:
-            time_casa, time_fora = "Capital CF", "Real FC"
-
-        # 2. Busca o Placar (Gols)
-        try:
-            g1 = driver.find_element(By.CLASS_NAME, "home-score").text.strip()
-            g2 = driver.find_element(By.CLASS_NAME, "away-score").text.strip()
-        except:
-            g1, g2 = "0", "0"
-
-        # 3. Busca o Tempo do Jogo (Status central)
-        try:
-            # No AiScore, o tempo fica geralmente num elemento de classe 'status' ou 'period'
-            tempo_jg = driver.find_element(By.CSS_SELECTOR, ".score-status .status").text.strip()
-            # Se vier vazio ou com quebra de linha, limpamos
-            tempo_jg = tempo_jg.replace("\n", " ")
-        except:
-            tempo_jg = "Ao Vivo"
-
-        # MONTAGEM DA LINHA FINAL
-        resultado = f"{time_casa} {g1} X {g2} {time_fora} | {tempo_jg}"
+        # Aguarda até que o placar esteja visível (usando seletores comuns do AiScore)
+        wait = WebDriverWait(driver, 20)
         
-        # Limpeza final de strings
-        resultado = " ".join(resultado.split())
+        # Extraindo o Placar (Seletores baseados na estrutura do AiScore)
+        home_score = wait.until(EC.presence_of_element_located((By.CLASS_NAME, "home-score"))).text
+        away_score = driver.find_element(By.CLASS_NAME, "away-score").text
+        
+        # Extraindo o Cronômetro/Status
+        status_tempo = driver.find_element(By.CLASS_NAME, "match-status").text
+        
+        resultado = f"Status: {status_tempo} | Placar: {home_score} x {away_score}"
+        print(f"Dados capturados: {resultado}")
 
-        with open("placares.txt", "w", encoding="utf-8") as f:
-            f.write(resultado)
-            
-        print(f"CAPTURA OK: {resultado}")
+        # Salva no arquivo placares.txt
+        with open("placares.txt", "a", encoding="utf-8") as f:
+            f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {resultado}\n")
 
     except Exception as e:
-        with open("placares.txt", "w", encoding="utf-8") as f:
-            f.write(f"Erro na captura: {str(e)}")
+        print(f"Erro ao extrair: {e}")
     finally:
         driver.quit()
 
 if __name__ == "__main__":
-    extrair_aiscore()
+    extrair_dados_partida()
