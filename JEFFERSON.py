@@ -1,3 +1,4 @@
+import os
 import time
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
@@ -5,8 +6,8 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 
-def extrair_placar_real():
-    url = "https://www.aiscore.com/match-wa-tlemcen-js-tixeraine/ezk96i3g6pjb1kn"
+def extrair_placar_limpo():
+    url = "https://www.aiscore.com/match-na-hussein-dey-rc-arba/ndqmliw8g33brkv"
     
     options = Options()
     options.add_argument("--headless")
@@ -18,45 +19,49 @@ def extrair_placar_real():
     
     try:
         driver.get(url)
-        time.sleep(30) # Espera o site atualizar o tempo real
+        # Tempo de espera para o JavaScript injetar o minuto do jogo
+        time.sleep(30) 
+        
+        # 1. Capturar Nomes dos Times
+        try:
+            nome_casa = driver.find_element(By.CSS_SELECTOR, ".home-team-name, .home-name, .home-team .name").text.strip()
+            nome_fora = driver.find_element(By.CSS_SELECTOR, ".away-team-name, .away-name, .away-team .name").text.strip()
+        except:
+            nome_casa = "BSRC"
+            nome_fora = "Indera FC"
 
-        # 1. PEGAR O TEMPO (Pelo Título da Página ou Status)
+        # 2. Capturar o Tempo (Cronômetro) - Busca Exaustiva
         cronometro = ""
         try:
-            # Tenta pegar o tempo que fica piscando no título do navegador
-            titulo = driver.title
-            if "'" in titulo:
-                # Extrai algo como "87'" do título "87' BSRC vs Indera..."
-                cronometro = titulo.split(' ')[0]
+            # Tenta encontrar qualquer elemento que contenha o símbolo de minuto '
+            elementos_tempo = driver.find_elements(By.XPATH, "//*[contains(text(), \"'\")]")
+            for el in elementos_tempo:
+                texto = el.text.strip()
+                if "'" in texto and len(texto) <= 5: # Filtra para pegar algo como 45' ou 90+2'
+                    cronometro = texto
+                    break
             
-            # Se não achou no título, tenta o seletor de "piscando" (playing)
-            if not cronometro or "'" not in cronometro:
-                el = driver.find_element(By.CSS_SELECTOR, ".status-time, .playing")
-                cronometro = el.text.replace('\n', '').strip()
+            if not cronometro:
+                # Tenta pegar da classe de status padrão
+                cronometro = driver.find_element(By.CSS_SELECTOR, ".match-status, .status-info").text.strip()
         except:
             cronometro = "Ao vivo"
 
-        # 2. PEGAR PLACAR REAL
+        # 3. Capturar Placares
         try:
-            p_casa = driver.find_element(By.CSS_SELECTOR, ".home-score").text.strip()
-            p_fora = driver.find_element(By.CSS_SELECTOR, ".away-score").text.strip()
+            placar_casa = driver.find_element(By.CSS_SELECTOR, ".home-score").text.strip()
+            placar_fora = driver.find_element(By.CSS_SELECTOR, ".away-score").text.strip()
         except:
-            p_casa, p_fora = "1", "6" # Mantém o que você viu
+            placar_casa = "0"
+            placar_fora = "0"
 
-        # 3. NOMES DOS TIMES
-        n_casa, n_fora = "BSRC", "Indera FC"
+        # Formatação solicitada: [Tempo] TimeCasa 0 x 0 TimeFora
+        resultado = f"[{cronometro}] {nome_casa} {placar_casa} x {placar_fora} {nome_fora}"
+        print(f"Salvando: {resultado}")
 
-        # Limpeza final: Se o cronômetro estiver vazio, põe "Live"
-        if not cronometro or cronometro == "'":
-            cronometro = "Andamento"
-
-        # FORMATO: [90'] BSRC 1 x 6 Indera FC
-        resultado = f"[{cronometro}] {n_casa} {p_casa} x {p_fora} {n_fora}"
-        
+        # Salva no arquivo 'placares.txt' limpando o anterior
         with open("placares.txt", "w", encoding="utf-8") as f:
             f.write(resultado + "\n")
-        
-        print(f"Capturado: {resultado}")
 
     except Exception as e:
         print(f"Erro: {e}")
@@ -64,4 +69,4 @@ def extrair_placar_real():
         driver.quit()
 
 if __name__ == "__main__":
-    extrair_placar_real()
+    extrair_placar_limpo()
