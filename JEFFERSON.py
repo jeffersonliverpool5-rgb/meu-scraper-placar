@@ -1,37 +1,35 @@
-import requests
+Vimport requests
+import subprocess
 import os
 
 # Configurações
 URL_API = "https://api.aiscore.com/v1/web/api/match/detail?match_id=9gklzi16gjpim7x"
 ARQUIVO = "placares.txt"
 
-def buscar_placar():
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    }
-
+def atualizar_github():
     try:
+        # 1. Scraping
+        headers = {"User-Agent": "Mozilla/5.0"}
         response = requests.get(URL_API, headers=headers, timeout=10)
-        data = response.json()
-
-        # Extração dos dados baseada na estrutura da API do AiScore
-        match_data = data.get('data', {})
-        home_score = match_data.get('home_score', 0)
-        away_score = match_data.get('away_score', 0)
-        home_name = match_data.get('home_team_name', 'Home')
-        away_name = match_data.get('away_team_name', 'Away')
-        status = match_data.get('status_name', 'N/A')
-
-        resultado = f"{home_name} {home_score} x {away_score} {away_name} ({status})"
+        data = response.json().get('data', {})
         
-        # Salva no arquivo
-        with open(ARQUIVO, "a", encoding="utf-8") as f:
-            f.write(resultado + "\n")
+        home = data.get('home_score', 0)
+        away = data.get('away_score', 0)
+        placar_formatado = f"HOME: {home} - AWAY: {away}"
+
+        # 2. Escrever no arquivo (sobrescreve para manter apenas o atual ou 'a' para lista)
+        with open(ARQUIVO, "w", encoding="utf-8") as f:
+            f.write(placar_formatado)
+
+        # 3. Comandos Git para subir ao GitHub
+        subprocess.run(["git", "add", ARQUIVO])
+        subprocess.run(["git", "commit", "-m", f"Atualização Placar: {placar_formatado}"])
+        subprocess.run(["git", "push"])
         
-        print(f"Sucesso: {resultado}")
+        print(f"Sucesso: {placar_formatado} enviado ao GitHub.")
 
     except Exception as e:
-        print(f"Erro ao buscar dados: {e}")
+        print(f"Erro: {e}")
 
 if __name__ == "__main__":
-    buscar_placar()
+    atualizar_github()
