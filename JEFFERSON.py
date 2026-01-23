@@ -15,42 +15,53 @@ def extrair_placar():
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36")
+    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
 
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
         driver.get(url)
-        # Espera o carregamento total dos dados dinâmicos
-        wait = WebDriverWait(driver, 20)
         
-        # 1. Extrair o Cronômetro (Tempo de jogo)
-        try:
-            # No AiScore, o tempo fica geralmente em uma classe 'status' ou 'time'
-            cronometro = wait.until(EC.presence_of_element_located((By.XPATH, "//span[contains(@class, 'match-status')] | //div[contains(@class, 'time-box')]"))).text
-        except:
-            cronometro = "Tempo N/A"
+        # Espera forçada para o JavaScript carregar os números
+        time.sleep(20) 
+        
+        # Rola um pouco a página para ativar o carregamento de dados dinâmicos
+        driver.execute_script("window.scrollTo(0, 500);")
+        time.sleep(2)
 
-        # 2. Extrair os Placares (Usando seletores específicos de pontuação)
+        # Seletores via XPATH baseados na estrutura visual do AiScore (Placar central)
         try:
-            # Buscando o valor numérico do placar
-            placar_casa = driver.find_element(By.XPATH, "//div[contains(@class, 'home-team')]//span[contains(@class, 'score')] | (//span[contains(@class, 'score')])[1]").text
-            placar_fora = driver.find_element(By.XPATH, "//div[contains(@class, 'away-team')]//span[contains(@class, 'score')] | (//span[contains(@class, 'score')])[2]").text
+            # O tempo geralmente fica no centro, em cima ou embaixo do placar
+            cronometro = driver.find_element(By.XPATH, "//div[contains(@class, 'match-status')]//span | //div[contains(@class, 'time-box')]").text
+        except:
+            cronometro = "Em jogo"
+
+        try:
+            # Busca o placar da esquerda (Casa) e direita (Fora)
+            # No AiScore, os placares grandes ficam em spans dentro de containers de score
+            placar_casa = driver.find_element(By.XPATH, "(//span[contains(@class, 'score')])[1]").text
+            placar_fora = driver.find_element(By.XPATH, "(//span[contains(@class, 'score')])[2]").text
+            
+            # Se o placar vier vazio, tenta outro seletor de fallback
+            if not placar_casa:
+                placar_casa = driver.find_element(By.CLASS_NAME, "home-score").text
+            if not placar_fora:
+                placar_fora = driver.find_element(By.CLASS_NAME, "away-score").text
         except:
             placar_casa = "0"
             placar_fora = "0"
 
-        # Formata a string final
-        # Exemplo: 23/01/2026 12:45:00 - [25'] Casa 1 x 0 Fora
         resultado = f"{time.strftime('%d/%m/%Y %H:%M:%S')} - [{cronometro}] Casa {placar_casa} x {placar_fora} Fora"
-        print(f"Capturado: {resultado}")
+        print(f"Resultado: {resultado}")
 
-        # Salva no arquivo
+        # Gravação no arquivo
         with open("placares.txt", "a", encoding="utf-8") as f:
             f.write(resultado + "\n")
 
     except Exception as e:
-        print(f"Erro: {e}")
+        print(f"Erro Geral: {e}")
+        with open("placares.txt", "a", encoding="utf-8") as f:
+            f.write(f"{time.strftime('%d/%m/%Y %H:%M:%S')} - Falha técnica no carregamento\n")
     finally:
         driver.quit()
 
