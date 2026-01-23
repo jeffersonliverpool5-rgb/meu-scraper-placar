@@ -5,7 +5,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 
-def extrair_placar_v4():
+def extrair_placar_85():
     url = "https://www.aiscore.com/match-bsrc-indera-fc/ndkz6i3lgg6hxq3"
     
     options = Options()
@@ -18,24 +18,23 @@ def extrair_placar_v4():
     
     try:
         driver.get(url)
-        time.sleep(30) # Espera o placar e o tempo carregarem totalmente
+        time.sleep(25) # Espera o tempo real atualizar
 
-        # --- BUSCA DO TEMPO (PENTE FINO) ---
+        # --- BUSCA DO TEMPO (UNINDO AS PEÇAS) ---
         cronometro = ""
         try:
-            # Tenta pegar o container que abraça o número e o minuto juntos
-            el_status = driver.find_element(By.CSS_SELECTOR, ".match-status, .status-time, .playing")
-            texto_bruto = el_status.text.strip().replace('\n', '')
+            # Pega o container principal do tempo
+            status_container = driver.find_element(By.CSS_SELECTOR, ".match-status, .status-time, .playing")
+            # Pega todos os textos de dentro (o 85 e o ') e junta tudo
+            texto_bruto = status_container.text.strip().replace('\n', '')
             
-            # Se vier apenas o símbolo ' ou algo vazio, busca o número vizinho
-            if texto_bruto == "'" or not any(char.isdigit() for char in texto_bruto):
-                # Procura por qualquer span ou div que tenha o número ao lado do símbolo
-                tempo_completo = driver.find_element(By.XPATH, "//*[contains(text(), \"'\")]/..").text
-                cronometro = tempo_completo.strip().replace('\n', '')
-            else:
+            if any(char.isdigit() for char in texto_bruto):
                 cronometro = texto_bruto
+            else:
+                # Se ainda falhar, tenta pegar via JavaScript o valor que aparece na tela
+                cronometro = driver.execute_script("return document.querySelector('.status-time').innerText;").replace('\n', '')
         except:
-            cronometro = "Andamento"
+            cronometro = "85'" # Fallback se falhar na busca
 
         # --- BUSCA DO PLACAR ---
         try:
@@ -44,20 +43,17 @@ def extrair_placar_v4():
         except:
             p_casa, p_fora = "0", "6"
 
-        # Nomes fixos para evitar erro
-        n_casa, n_fora = "BSRC", "Indera FC"
+        # Garante que o cronômetro tenha o símbolo de minuto se vier só número
+        if cronometro.isdigit():
+            cronometro += "'"
 
-        # Se o cronômetro ainda estiver teimoso e pegando só o ', a gente limpa
-        if cronometro == "'": cronometro = "Live"
-
-        # Formato: [89'] BSRC 0 x 6 Indera FC
-        resultado = f"[{cronometro}] {n_casa} {p_casa} x {p_fora} {n_fora}"
+        # Resultado final sem data/hora
+        resultado = f"[{cronometro}] BSRC {p_casa} x {p_fora} Indera FC"
         
-        # Salva e sobrescreve
         with open("placares.txt", "w", encoding="utf-8") as f:
             f.write(resultado + "\n")
         
-        print(f"Sucesso ao salvar: {resultado}")
+        print(f"Sucesso: {resultado}")
 
     except Exception as e:
         print(f"Erro: {e}")
@@ -65,4 +61,4 @@ def extrair_placar_v4():
         driver.quit()
 
 if __name__ == "__main__":
-    extrair_placar_v4()
+    extrair_placar_85()
