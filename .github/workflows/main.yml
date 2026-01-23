@@ -1,37 +1,36 @@
-name: Scraper AiScore
+name: Extrair Placar AiScore
 
 on:
   schedule:
+    # Roda a cada 5 minutos (formato Cron)
     - cron: '*/5 * * * *'
-  workflow_dispatch:
+  workflow_dispatch: # Permite rodar manualmente pelo botão no GitHub
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write # Essencial para permitir o push do bot
+
     steps:
-      - name: Checkout Código
-        uses: actions/checkout@v3
+    - name: Checkout do código
+      uses: actions/checkout@v3
 
-      - name: Instalar Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.9'
+    - name: Configurar Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
 
-      - name: Instalar Dependências
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y google-chrome-stable
-          pip install selenium webdriver-manager
+    - name: Instalar dependências
+      run: |
+        pip install selenium webdriver-manager
 
-      - name: Executar Scraper
-        run: python JEFFERSON.py
+    - name: Rodar script de extração
+        # Aqui ele executa o seu arquivo JEFFERSON.py ou o nome que você der ao script
+      run: python JEFFERSON.py
 
-      - name: Salvar Resultado
-        run: |
-          git config --global user.name "AiScore Bot"
-          git config --global user.email "bot@aiscore.com"
-          git add placares.txt
-          git commit -m "Update Placar: $(cat placares.txt)" || exit 0
-          git push
+    - name: Salvar alterações no placares.txt
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add placares.txt
+        git commit -m "Atualização automática do placar [skip ci]" || exit 0
+        git push
