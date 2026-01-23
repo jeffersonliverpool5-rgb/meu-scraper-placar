@@ -6,7 +6,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 
-def extrair_placar_limpo():
+def extrair_placar_insano():
     url = "https://www.aiscore.com/match-bsrc-indera-fc/ndkz6i3lgg6hxq3"
     
     options = Options()
@@ -19,41 +19,42 @@ def extrair_placar_limpo():
     
     try:
         driver.get(url)
-        time.sleep(25) # Espera o carregamento
+        time.sleep(30) # Espera o carregamento dos scripts do site
 
-        # 1. PEGAR O TEMPO (Focado no container de status)
-        cronometro = "HT"
-        try:
-            # Busca especificamente na área de tempo/status
-            el_status = driver.find_element(By.CSS_SELECTOR, ".match-status, .status-name, .status-time")
-            cronometro = el_status.text.strip().replace('\n', ' ')
-            
-            # Se o texto for muito longo (pegou coisa errada), encurta
-            if len(cronometro) > 10:
-                # Tenta pegar apenas o que tem o símbolo de minuto
-                minuto = driver.find_element(By.XPATH, "//*[contains(text(), \"'\")]")
-                cronometro = minuto.text.strip()
-        except:
-            cronometro = "Live"
+        # --- TÉCNICA 1: JAVASCRIPT DIRETO (Pega o que o olho humano vê) ---
+        cronometro = driver.execute_script("""
+            var el = document.querySelector('.status-time, .playing, .match-status span');
+            return el ? el.innerText : '...';
+        """)
 
-        # 2. PEGAR PLACAR
+        # Se o JS falhar, tenta pegar qualquer coisa com '
+        if not cronometro or cronometro == '...':
+            try:
+                cronometro = driver.find_element(By.XPATH, "//*[contains(text(), \"'\")]").text
+            except:
+                cronometro = "Andamento"
+
+        # --- PEGAR PLACAR ---
         try:
             p_casa = driver.find_element(By.CSS_SELECTOR, ".home-score").text.strip()
             p_fora = driver.find_element(By.CSS_SELECTOR, ".away-score").text.strip()
         except:
             p_casa, p_fora = "0", "5"
 
-        # 3. NOMES DOS TIMES
+        # Nomes dos times fixos para evitar erro de carregamento
         n_casa, n_fora = "BSRC", "Indera FC"
 
-        # Formato final desejado
+        # Limpeza rápida
+        cronometro = str(cronometro).replace('\n', '').strip()
+        if len(cronometro) > 6: cronometro = "Live"
+
         resultado = f"[{cronometro}] {n_casa} {p_casa} x {p_fora} {n_fora}"
         
-        # Salva e limpa o arquivo
+        # SALVA E APAGA O ANTERIOR
         with open("placares.txt", "w", encoding="utf-8") as f:
             f.write(resultado + "\n")
         
-        print(f"Gravado: {resultado}")
+        print(f"Resultado salvo: {resultado}")
 
     except Exception as e:
         print(f"Erro: {e}")
@@ -61,4 +62,4 @@ def extrair_placar_limpo():
         driver.quit()
 
 if __name__ == "__main__":
-    extrair_placar_limpo()
+    extrair_placar_insano()
