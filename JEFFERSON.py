@@ -18,7 +18,7 @@ def extrair_aiscore():
         url = "https://www.aiscore.com/match-instituto-de-cordoba-velez-sarsfield/vrqwni43wdgu4qn"
         driver.get(url)
         
-        # Tempo de espera para o JavaScript carregar o número do tempo
+        # Espera o carregamento (15 segundos é o tempo que você definiu)
         time.sleep(15)
 
         # 1. Busca os nomes dos times
@@ -28,24 +28,32 @@ def extrair_aiscore():
         except:
             time_casa, time_fora = "Instituto", "Velez Sarsfield"
 
-        # 2. Busca o Placar (Gols)
+        # 2. Busca o Placar
         try:
             g1 = driver.find_element(By.CLASS_NAME, "home-score").text.strip()
             g2 = driver.find_element(By.CLASS_NAME, "away-score").text.strip()
         except:
             g1, g2 = "0", "0"
 
-        # 3. Busca o valor EXATO dentro da tag time-score com o atributo data-v
-        try:
-            # Usando o seletor exato da tag que você identificou
-            elemento_tempo = driver.find_element(By.CSS_SELECTOR, ".time-score[data-v-5689a66f]")
-            tempo_val = elemento_tempo.text.strip()
-            
-            # Se ainda vier vazio, tentamos pegar pelo innerHTML (força a leitura do que está entre > <)
-            if not tempo_val:
-                tempo_val = elemento_tempo.get_attribute("innerHTML").strip()
-        except:
-            tempo_val = "--"
+        # 3. BUSCA AVANÇADA DO TEMPO VIA JAVASCRIPT
+        # Isso varre todos os elementos com classe time-score e pega o primeiro que tiver conteúdo
+        tempo_val = driver.execute_script("""
+            var elementos = document.getElementsByClassName('time-score');
+            for (var i = 0; i < elementos.length; i++) {
+                var texto = elementos[i].innerText.trim();
+                if (texto !== "" && texto !== "0") {
+                    return texto;
+                }
+            }
+            return "0";
+        """)
+
+        # Se o JS falhar, tentamos capturar qualquer div que contenha o atributo data-v que você passou
+        if tempo_val == "0":
+            try:
+                tempo_val = driver.find_element(By.XPATH, "//*[contains(@class, 'time-score')]").get_attribute("innerText").strip()
+            except:
+                tempo_val = "Ao Vivo"
 
         # MONTAGEM DA LINHA FINAL
         resultado = f"{time_casa} {g1} X {g2} {time_fora} | {tempo_val}"
@@ -57,9 +65,7 @@ def extrair_aiscore():
         print(f"CAPTURA OK: {resultado}")
 
     except Exception as e:
-        with open("placares.txt", "w", encoding="utf-8") as f:
-            f.write(f"Erro na captura: {str(e)}")
-        print(f"Erro: {e}")
+        print(f"Erro Crítico: {e}")
     finally:
         driver.quit()
 
