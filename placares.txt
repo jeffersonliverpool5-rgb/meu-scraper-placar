@@ -1,1 +1,20 @@
-Capital CF 2 X 2 Real FC | Ao Vivo
+Erro na captura: Message: 
+Stacktrace:
+#0 0x55769575bafa <unknown>
+#1 0x55769517560f <unknown>
+#2 0x5576951caa16 <unknown>
+#3 0x5576951cac51 <unknown>
+#4 0x557695216404 <unknown>
+#5 0x55769521362b <unknown>
+#6 0x5576951bc842 <unknown>
+#7 0x5576951bd631 <unknown>
+#8 0x557695721689 <unknown>
+#9 0x557695724581 <unknown>
+#10 0x55769570dca9 <unknown>
+#11 0x55769572513e <unknown>
+#12 0x5576956f43a0 <unknown>
+#13 0x557695748fc8 <unknown>
+#14 0x55769574919b <unknown>
+#15 0x55769575ae68 <unknown>
+#16 0x7f7dde69caa4 <unknown>
+#17 0x7f7dde729c6c <unknown>
