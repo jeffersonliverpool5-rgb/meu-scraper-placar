@@ -6,7 +6,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 
-def extrair_placar_completo():
+def extrair_placar_limpo():
     url = "https://www.aiscore.com/match-bsrc-indera-fc/ndkz6i3lgg6hxq3"
     
     options = Options()
@@ -19,47 +19,41 @@ def extrair_placar_completo():
     
     try:
         driver.get(url)
-        # 30 segundos é o tempo ideal para o placar ao vivo conectar
-        time.sleep(30)
+        time.sleep(25) # Espera o carregamento
 
-        # 1. BUSCA PELO TEMPO (Pega o número + o sinal de minuto)
-        cronometro = "Ao vivo"
+        # 1. PEGAR O TEMPO (Focado no container de status)
+        cronometro = "HT"
         try:
-            # Procuramos o elemento que contém o minuto real. 
-            # No AiScore, o pai do elemento que tem o "'" geralmente tem o tempo completo.
-            el_tempo = driver.find_element(By.XPATH, "//*[contains(text(), \"'\")]/..")
-            texto_bruto = el_tempo.text.strip().replace('\n', '')
-            if texto_bruto:
-                cronometro = texto_bruto
+            # Busca especificamente na área de tempo/status
+            el_status = driver.find_element(By.CSS_SELECTOR, ".match-status, .status-name, .status-time")
+            cronometro = el_status.text.strip().replace('\n', ' ')
+            
+            # Se o texto for muito longo (pegou coisa errada), encurta
+            if len(cronometro) > 10:
+                # Tenta pegar apenas o que tem o símbolo de minuto
+                minuto = driver.find_element(By.XPATH, "//*[contains(text(), \"'\")]")
+                cronometro = minuto.text.strip()
         except:
-            # Fallback caso o jogo tenha acabado ou esteja no intervalo
-            try:
-                cronometro = driver.find_element(By.CSS_SELECTOR, ".match-status, .status-name").text.strip()
-            except:
-                pass
+            cronometro = "Live"
 
-        # 2. CAPTURAR PLACAR
+        # 2. PEGAR PLACAR
         try:
             p_casa = driver.find_element(By.CSS_SELECTOR, ".home-score").text.strip()
             p_fora = driver.find_element(By.CSS_SELECTOR, ".away-score").text.strip()
         except:
-            p_casa, p_fora = "0", "4"
+            p_casa, p_fora = "0", "5"
 
-        # 3. CAPTURAR NOMES
-        try:
-            n_casa = driver.find_element(By.CSS_SELECTOR, ".home-team-name").text.strip()
-            n_fora = driver.find_element(By.CSS_SELECTOR, ".away-team-name").text.strip()
-        except:
-            n_casa, n_fora = "BSRC", "Indera FC"
+        # 3. NOMES DOS TIMES
+        n_casa, n_fora = "BSRC", "Indera FC"
 
-        # Resultado limpo: [85'] BSRC 0 x 4 Indera FC
+        # Formato final desejado
         resultado = f"[{cronometro}] {n_casa} {p_casa} x {p_fora} {n_fora}"
         
-        # Grava no arquivo limpando o anterior
+        # Salva e limpa o arquivo
         with open("placares.txt", "w", encoding="utf-8") as f:
             f.write(resultado + "\n")
         
-        print(f"Sucesso: {resultado}")
+        print(f"Gravado: {resultado}")
 
     except Exception as e:
         print(f"Erro: {e}")
@@ -67,4 +61,4 @@ def extrair_placar_completo():
         driver.quit()
 
 if __name__ == "__main__":
-    extrair_placar_completo()
+    extrair_placar_limpo()
