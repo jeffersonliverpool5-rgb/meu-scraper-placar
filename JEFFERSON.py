@@ -9,7 +9,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 
 def extrair_placar():
-    url = "https://www.aiscore.com/match-bsrc-indera-fc/ndkz6i3lgg6hxq3"
+    url = "https://www.aiscore.com/match-armadale-sc-perth-redstar/ndkz6i3l9j4ixq3"
     
     options = Options()
     options.add_argument("--headless")
