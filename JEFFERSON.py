@@ -8,7 +8,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 
-def extrair_placar():
+def extrair_placar_completo():
     url = "https://www.aiscore.com/match-bsrc-indera-fc/ndkz6i3lgg6hxq3"
     
     options = Options()
@@ -21,32 +21,41 @@ def extrair_placar():
     
     try:
         driver.get(url)
-        # Tempo de espera para o carregamento do live score
-        time.sleep(25) 
+        # Espera generosa para garantir que o script do cronômetro carregue
+        time.sleep(30) 
         
-        # 1. Captura o Tempo de Jogo (Cronômetro)
+        # 1. Capturar Nomes dos Times
         try:
-            # Tenta encontrar o elemento que contém o minuto atual
-            cronometro = driver.find_element(By.XPATH, "//div[contains(@class, 'match-status')]//span[contains(text(), \"'\")] | //span[contains(@class, 'status-time')] | //div[contains(@class, 'time-box')]").text
-            if not cronometro:
-                cronometro = driver.find_element(By.CSS_SELECTOR, ".match-status").text
+            nome_casa = driver.find_element(By.CSS_SELECTOR, ".home-team-name, .home-name").text
+            nome_fora = driver.find_element(By.CSS_SELECTOR, ".away-team-name, .away-name").text
         except:
-            cronometro = "Live"
+            nome_casa = "BSRC"
+            nome_fora = "Indera FC"
 
-        # 2. Captura os Placares
+        # 2. Capturar o Tempo (Cronômetro)
+        # Tentando localizar o span que contém o caractere de minutos (')
         try:
-            placar_casa = driver.find_element(By.CSS_SELECTOR, ".home-score, .score-item.home").text
-            placar_fora = driver.find_element(By.CSS_SELECTOR, ".away-score, .score-item.away").text
+            # Seletor focado na div de status que contém o tempo real
+            cronometro = driver.find_element(By.XPATH, "//div[contains(@class, 'match-status')]//span[contains(text(), \"'\")]").text
+            if not cronometro:
+                # Fallback para qualquer texto dentro da caixa de tempo
+                cronometro = driver.find_element(By.CSS_SELECTOR, ".status-info, .time").text
+        except:
+            cronometro = "Em jogo"
+
+        # 3. Capturar Placares
+        try:
+            placar_casa = driver.find_element(By.CSS_SELECTOR, ".home-score").text
+            placar_fora = driver.find_element(By.CSS_SELECTOR, ".away-score").text
         except:
             placar_casa = "0"
             placar_fora = "0"
 
-        # Formatação Final: Data/Hora - [Tempo] Placar
-        # Exemplo: 23/01/2026 13:05:00 - [32'] 0 x 0
-        resultado = f"{time.strftime('%d/%m/%Y %H:%M:%S')} - [{cronometro}] {placar_casa} x {placar_fora}"
-        print(f"Atualizando: {resultado}")
+        # Montagem da linha: Data - [Tempo] TimeCasa 0 x 0 TimeFora
+        resultado = f"{time.strftime('%d/%m/%Y %H:%M:%S')} - [{cronometro}] {nome_casa} {placar_casa} x {placar_fora} {nome_fora}"
+        print(f"Resultado: {resultado}")
 
-        # Sobrescreve o arquivo (modo 'w') para manter apenas a última linha
+        # Salva limpando o anterior
         with open("placares.txt", "w", encoding="utf-8") as f:
             f.write(resultado + "\n")
 
@@ -56,4 +65,4 @@ def extrair_placar():
         driver.quit()
 
 if __name__ == "__main__":
-    extrair_placar()
+    extrair_placar_completo()
