@@ -4,58 +4,58 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
-def extrair_aiscore():
+def extrair_aiscore_preciso():
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+    # User-agent é crucial para o AiScore não bloquear a requisição
+    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36")
     
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
-    
+    wait = WebDriverWait(driver, 25) # Aumentamos o tempo de espera
+
     try:
         url = "https://www.aiscore.com/match-instituto-de-cordoba-velez-sarsfield/vrqwni43wdgu4qn"
         driver.get(url)
         
-        # Espera o carregamento dos dados reais
-        time.sleep(15)
+        # 1. Espera o carregamento do elemento que contém o status do jogo (tempo/período)
+        # O AiScore usa muito a classe 'score-status' ou 'status-running'
+        elemento_tempo = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, ".score-status, .match-status")))
+        tempo_jg = elemento_tempo.text.strip().replace("\n", " ")
 
-        # 1. Busca os nomes dos times
+        # 2. Captura dos nomes dos times
+        # Usando seletores que evitam pegar nomes de jogadores ou substitutos
         time_casa = driver.find_element(By.CSS_SELECTOR, ".home-team .name").text.strip()
         time_fora = driver.find_element(By.CSS_SELECTOR, ".away-team .name").text.strip()
 
-        # 2. Busca o Placar e o Tempo dentro do container 'match-score'
-        # Usamos execução de script para garantir que pegamos o valor exato entre as tags ><
-        dados_placar = driver.execute_script("""
-            let container = document.querySelector('.match-score');
-            if (!container) return {g1: "0", g2: "0", tempo: "0"};
-            
-            // Busca os elementos de score e tempo dentro do container match-score
-            let hScore = container.querySelector('.home-score')?.innerText || "0";
-            let aScore = container.querySelector('.away-score')?.innerText || "0";
-            let tempo = container.querySelector('.time-score')?.innerText || "0";
-            
-            return {g1: hScore, g2: aScore, tempo: tempo};
-        """)
+        # 3. Captura do Placar
+        # No layout atual, eles usam classes como 'home-score' e 'away-score' dentro do header
+        try:
+            g1 = driver.find_element(By.CSS_SELECTOR, ".score-home, .home-score").text.strip()
+            g2 = driver.find_element(By.CSS_SELECTOR, ".score-away, .away-score").text.strip()
+        except:
+            g1, g2 = "0", "0"
 
-        g1 = dados_placar['g1']
-        g2 = dados_placar['g2']
-        tempo_val = dados_placar['tempo']
-
-        # MONTAGEM DA LINHA FINAL
-        resultado = f"{time_casa} {g1} X {g2} {time_fora} | {tempo_val}"
+        resultado = f"{time_casa} {g1} X {g2} {time_fora} | {tempo_jg}"
+        
+        # Limpa espaços duplos
         resultado = " ".join(resultado.split())
 
         with open("placares.txt", "w", encoding="utf-8") as f:
             f.write(resultado)
             
-        print(f"CAPTURA OK: {resultado}")
+        print(f"SUCESSO: {resultado}")
 
     except Exception as e:
-        print(f"Erro: {e}")
+        print(f"Erro na extração: {e}")
+        # Tira um print da tela para debug (ajuda muito a ver o que o bot está vendo)
+        driver.save_screenshot("debug_erro.png")
     finally:
         driver.quit()
 
 if __name__ == "__main__":
-    extrair_aiscore()
+    extrair_aiscore_preciso()
