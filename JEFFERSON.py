@@ -15,11 +15,10 @@ def extrair_aiscore():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
-        # URL solicitada
         url = "https://www.aiscore.com/match-instituto-de-cordoba-velez-sarsfield/vrqwni43wdgu4qn"
         driver.get(url)
         
-        # Espera o carregamento do conteúdo dinâmico
+        # Tempo de espera para o JavaScript carregar o número do tempo
         time.sleep(15)
 
         # 1. Busca os nomes dos times
@@ -36,19 +35,19 @@ def extrair_aiscore():
         except:
             g1, g2 = "0", "0"
 
-        # 3. Busca o valor exato dentro de .time-score (Ex: 50)
+        # 3. Busca o valor EXATO dentro da tag time-score com o atributo data-v
         try:
-            # Busca especificamente o elemento time-score que contém o minuto
-            # O seletor abaixo foca no elemento que tem a classe time-score
-            tempo_val = driver.find_element(By.CSS_SELECTOR, ".time-score").text.strip()
+            # Usando o seletor exato da tag que você identificou
+            elemento_tempo = driver.find_element(By.CSS_SELECTOR, ".time-score[data-v-5689a66f]")
+            tempo_val = elemento_tempo.text.strip()
             
-            # Se o valor vier vazio por algum motivo, tentamos pelo atributo data-v
+            # Se ainda vier vazio, tentamos pegar pelo innerHTML (força a leitura do que está entre > <)
             if not tempo_val:
-                tempo_val = driver.find_element(By.CSS_SELECTOR, "div[data-v-5689a66f].time-score").text.strip()
+                tempo_val = elemento_tempo.get_attribute("innerHTML").strip()
         except:
-            tempo_val = "0"
+            tempo_val = "--"
 
-        # MONTAGEM DA LINHA FINAL substituindo "Ao Vivo" pelo valor capturado
+        # MONTAGEM DA LINHA FINAL
         resultado = f"{time_casa} {g1} X {g2} {time_fora} | {tempo_val}"
         resultado = " ".join(resultado.split())
 
