@@ -15,50 +15,50 @@ def extrair_aiscore():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
-        url = "https://www.aiscore.com/match-central-cordoba-sde-gimnasia-y-esgrima-de-mendoza/vrqwni43wpgc4qn"
+        url = "https://www.aiscore.com/match-capital-cf-real-fc/ezk96i369dxu1kn"
         driver.get(url)
         
-        # Espera generosa para garantir o carregamento do conteúdo dinâmico
-        time.sleep(15)
+        # Tempo de espera para o conteúdo dinâmico carregar
+        time.sleep(12)
 
-        # 1. Busca os nomes dos times dentro do container de cabeçalho
+        # 1. Busca os nomes dos times
         try:
-            # Usando caminhos mais específicos para não pegar nomes de jogadores
             time_casa = driver.find_element(By.XPATH, "//div[contains(@class, 'home-team')]//a[contains(@class, 'name')]").text.strip()
             time_fora = driver.find_element(By.XPATH, "//div[contains(@class, 'away-team')]//a[contains(@class, 'name')]").text.strip()
         except:
-            time_casa, time_fora = "Capital CF", "Real FC"
+            time_casa, time_fora = "Casa", "Fora"
 
-        # 2. Busca o Placar (Gols)
+        # 2. Busca o Placar
         try:
             g1 = driver.find_element(By.CLASS_NAME, "home-score").text.strip()
             g2 = driver.find_element(By.CLASS_NAME, "away-score").text.strip()
         except:
             g1, g2 = "0", "0"
 
-        # 3. Busca o Tempo do Jogo (Status central)
+        # 3. BUSCA O TEMPO (O QUE VOCÊ PRECISA)
         try:
-            # No AiScore, o tempo fica geralmente num elemento de classe 'status' ou 'period'
-            tempo_jg = driver.find_element(By.CSS_SELECTOR, ".score-status .status").text.strip()
-            # Se vier vazio ou com quebra de linha, limpamos
-            tempo_jg = tempo_jg.replace("\n", " ")
+            # Tenta o seletor mais comum para o relógio/status no AiScore
+            tempo_jg = driver.find_element(By.CSS_SELECTOR, ".score-status .status-name, .score-status .status").text.strip()
         except:
-            tempo_jg = "Ao Vivo"
+            # Backup caso o seletor mude durante o jogo
+            try:
+                tempo_jg = driver.find_element(By.XPATH, "//div[contains(@class, 'score-status')]").text.strip()
+            except:
+                tempo_jg = "--"
 
-        # MONTAGEM DA LINHA FINAL
-        resultado = f"{time_casa} {g1} X {g2} {time_fora} | {tempo_jg}"
+        # MONTAGEM DA LINHA FINAL COM O TEMPO
+        resultado = f"{time_casa} {g1} X {g2} {time_fora} | Tempo: {tempo_jg}"
         
-        # Limpeza final de strings
+        # Limpeza de strings
         resultado = " ".join(resultado.split())
 
         with open("placares.txt", "w", encoding="utf-8") as f:
             f.write(resultado)
             
-        print(f"CAPTURA OK: {resultado}")
+        print(f"CAPTURA COMPLETA: {resultado}")
 
     except Exception as e:
-        with open("placares.txt", "w", encoding="utf-8") as f:
-            f.write(f"Erro na captura: {str(e)}")
+        print(f"Erro na captura: {str(e)}")
     finally:
         driver.quit()
 
