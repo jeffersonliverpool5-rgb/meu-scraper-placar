@@ -19,7 +19,7 @@ def extrair_aiscore_preciso():
     wait = WebDriverWait(driver, 25) # Aumentamos o tempo de espera
 
     try:
-        url = "https://www.aiscore.com/match-instituto-de-cordoba-velez-sarsfield/vrqwni43wdgu4qn"
+        url = "https://www.aiscore.com/match-central-cordoba-sde-gimnasia-y-esgrima-de-mendoza/vrqwni43wpgc4qn"
         driver.get(url)
         
         # 1. Espera o carregamento do elemento que contém o status do jogo (tempo/período)
