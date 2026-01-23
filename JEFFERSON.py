@@ -7,7 +7,7 @@ from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 
 def extrair_placar_limpo():
-    url = "https://www.aiscore.com/match-wa-tlemcen-js-tixeraine/ezk96i3g6pjb1kn"
+    url = "https://www.aiscore.com/match-bayswater-city-fremantle-city/wv78xiv8jmlsokr"
     
     options = Options()
     options.add_argument("--headless")
