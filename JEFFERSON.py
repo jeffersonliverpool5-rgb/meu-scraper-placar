@@ -6,7 +6,7 @@ from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 
 def extrair_placar_real():
-    url = "https://www.aiscore.com/match-bsrc-indera-fc/ndkz6i3lgg6hxq3"
+    url = "https://www.aiscore.com/match-wa-tlemcen-js-tixeraine/ezk96i3g6pjb1kn"
     
     options = Options()
     options.add_argument("--headless")
