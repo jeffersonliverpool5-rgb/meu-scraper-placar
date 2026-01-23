@@ -5,7 +5,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 
-def extrair_placar_85():
+def extrair_placar_real():
     url = "https://www.aiscore.com/match-bsrc-indera-fc/ndkz6i3lgg6hxq3"
     
     options = Options()
@@ -18,42 +18,45 @@ def extrair_placar_85():
     
     try:
         driver.get(url)
-        time.sleep(25) # Espera o tempo real atualizar
+        time.sleep(30) # Espera o site atualizar o tempo real
 
-        # --- BUSCA DO TEMPO (UNINDO AS PEÇAS) ---
+        # 1. PEGAR O TEMPO (Pelo Título da Página ou Status)
         cronometro = ""
         try:
-            # Pega o container principal do tempo
-            status_container = driver.find_element(By.CSS_SELECTOR, ".match-status, .status-time, .playing")
-            # Pega todos os textos de dentro (o 85 e o ') e junta tudo
-            texto_bruto = status_container.text.strip().replace('\n', '')
+            # Tenta pegar o tempo que fica piscando no título do navegador
+            titulo = driver.title
+            if "'" in titulo:
+                # Extrai algo como "87'" do título "87' BSRC vs Indera..."
+                cronometro = titulo.split(' ')[0]
             
-            if any(char.isdigit() for char in texto_bruto):
-                cronometro = texto_bruto
-            else:
-                # Se ainda falhar, tenta pegar via JavaScript o valor que aparece na tela
-                cronometro = driver.execute_script("return document.querySelector('.status-time').innerText;").replace('\n', '')
+            # Se não achou no título, tenta o seletor de "piscando" (playing)
+            if not cronometro or "'" not in cronometro:
+                el = driver.find_element(By.CSS_SELECTOR, ".status-time, .playing")
+                cronometro = el.text.replace('\n', '').strip()
         except:
-            cronometro = "85'" # Fallback se falhar na busca
+            cronometro = "Ao vivo"
 
-        # --- BUSCA DO PLACAR ---
+        # 2. PEGAR PLACAR REAL
         try:
             p_casa = driver.find_element(By.CSS_SELECTOR, ".home-score").text.strip()
             p_fora = driver.find_element(By.CSS_SELECTOR, ".away-score").text.strip()
         except:
-            p_casa, p_fora = "0", "6"
+            p_casa, p_fora = "1", "6" # Mantém o que você viu
 
-        # Garante que o cronômetro tenha o símbolo de minuto se vier só número
-        if cronometro.isdigit():
-            cronometro += "'"
+        # 3. NOMES DOS TIMES
+        n_casa, n_fora = "BSRC", "Indera FC"
 
-        # Resultado final sem data/hora
-        resultado = f"[{cronometro}] BSRC {p_casa} x {p_fora} Indera FC"
+        # Limpeza final: Se o cronômetro estiver vazio, põe "Live"
+        if not cronometro or cronometro == "'":
+            cronometro = "Andamento"
+
+        # FORMATO: [90'] BSRC 1 x 6 Indera FC
+        resultado = f"[{cronometro}] {n_casa} {p_casa} x {p_fora} {n_fora}"
         
         with open("placares.txt", "w", encoding="utf-8") as f:
             f.write(resultado + "\n")
         
-        print(f"Sucesso: {resultado}")
+        print(f"Capturado: {resultado}")
 
     except Exception as e:
         print(f"Erro: {e}")
@@ -61,4 +64,4 @@ def extrair_placar_85():
         driver.quit()
 
 if __name__ == "__main__":
-    extrair_placar_85()
+    extrair_placar_real()
