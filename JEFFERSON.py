@@ -1,48 +1,71 @@
-import requests
+import time
 import subprocess
 import os
-from datetime import datetime
+from selenium import webdriver
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
 
-# Link direto da API do jogo informado
-URL_API = "https://api.aiscore.com/v1/web/api/match/detail?match_id=9gklzi16gjpim7x"
-ARQUIVO = "placares.txt"
-
-def atualizar():
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    }
-
+def extrair_e_subir():
+    options = Options()
+    options.add_argument("--headless") # Roda sem abrir janela
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+    
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    
     try:
-        # 1. Pega os dados da API
-        response = requests.get(URL_API, headers=headers, timeout=15)
-        data = response.json().get('data', {})
+        # URL do jogo que você quer monitorar
+        url = "https://www.aiscore.com/match-capital-cf-real-fc/ezk96i369dxu1kn"
+        driver.get(url)
         
-        home = data.get('home_score', 0)
-        away = data.get('away_score', 0)
-        agora = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-        
-        # O segredo: colocar o horário garante que o arquivo sempre mude
-        conteudo = f"HOME {home} x {away} AWAY | Ultima atualizacao: {agora}"
+        # Espera o site carregar os números
+        time.sleep(15)
 
-        # 2. Escreve no arquivo (sobrescrevendo o anterior)
-        with open(ARQUIVO, "w", encoding="utf-8") as f:
-            f.write(conteudo)
-        
-        print(f"Placar capturado: {home}x{away}")
+        # 1. Busca os nomes
+        try:
+            time_casa = driver.find_element(By.XPATH, "//div[contains(@class, 'home-team')]//a[contains(@class, 'name')]").text.strip()
+            time_fora = driver.find_element(By.XPATH, "//div[contains(@class, 'away-team')]//a[contains(@class, 'name')]").text.strip()
+        except:
+            time_casa, time_fora = "Capital CF", "Real FC"
 
-        # 3. Comandos Git - Forçando o Push
-        # 'cd' para a pasta do script antes de rodar os comandos
+        # 2. Busca o Placar
+        try:
+            g1 = driver.find_element(By.CLASS_NAME, "home-score").text.strip()
+            g2 = driver.find_element(By.CLASS_NAME, "away-score").text.strip()
+        except:
+            g1, g2 = "0", "0"
+
+        # 3. Busca o Tempo
+        try:
+            tempo_jg = driver.find_element(By.CSS_SELECTOR, ".score-status .status").text.strip()
+            tempo_jg = tempo_jg.replace("\n", " ")
+        except:
+            tempo_jg = "Ao Vivo"
+
+        resultado = f"{time_casa} {g1} X {g2} {time_fora} | {tempo_jg}"
+        
+        # SALVA LOCALMENTE
+        with open("placares.txt", "w", encoding="utf-8") as f:
+            f.write(resultado)
+            
+        print(f"CAPTURA OK: {resultado}")
+
+        # --- PARTE DO GITHUB ---
+        # Garante que estamos na pasta certa para o Git
         os.chdir(os.path.dirname(os.path.abspath(__file__)))
         
-        subprocess.run(["git", "add", ARQUIVO], check=True)
-        # Commit com a hora para não dar erro de "nada para commitar"
-        subprocess.run(["git", "commit", "-m", f"Placar {home}x{away} em {agora}"], check=True)
+        subprocess.run(["git", "add", "placares.txt"], check=True)
+        subprocess.run(["git", "commit", "-m", f"Placar atualizado: {g1}x{g2}"], check=True)
         subprocess.run(["git", "push"], check=True)
-        
-        print(">>> ATUALIZADO NO GITHUB COM SUCESSO!")
+        print("ENVIADO PARA O GITHUB!")
 
     except Exception as e:
-        print(f">>> ERRO: {e}")
+        print(f"Erro: {e}")
+    finally:
+        driver.quit()
 
 if __name__ == "__main__":
-    atualizar()
+    extrair_e_subir()
