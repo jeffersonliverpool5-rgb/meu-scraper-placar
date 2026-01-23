@@ -19,8 +19,8 @@ def extrair_placar_limpo():
     
     try:
         driver.get(url)
-        # Tempo de espera para o JavaScript injetar o minuto do jogo
-        time.sleep(30) 
+        # REDUZI PARA 15 SEGUNDOS: 30 era muito tempo de espera parado
+        time.sleep(15) 
         
         # 1. Capturar Nomes dos Times
         try:
@@ -30,16 +30,15 @@ def extrair_placar_limpo():
             nome_casa = "BSRC"
             nome_fora = "Indera FC"
 
-        # 2. Capturar o Tempo (Cronômetro) - Busca Exaustiva
+        # 2. Capturar o Tempo
         cronometro = ""
         try:
             elementos_tempo = driver.find_elements(By.XPATH, "//*[contains(text(), \"'\")]")
             for el in elementos_tempo:
                 texto = el.text.strip()
-                if "'" in texto and len(texto) <= 5: # Filtra para pegar algo como 45' ou 90+2'
+                if "'" in texto and len(texto) <= 5:
                     cronometro = texto
                     break
-            
             if not cronometro:
                 cronometro = driver.find_element(By.CSS_SELECTOR, ".match-status, .status-info").text.strip()
         except:
@@ -53,27 +52,25 @@ def extrair_placar_limpo():
             placar_casa = "0"
             placar_fora = "0"
 
-        # Formatação solicitada
         resultado = f"[{cronometro}] {nome_casa} {placar_casa} x {placar_fora} {nome_fora}"
-        print(f"Salvando: {resultado}")
-
-        # Salva no arquivo 'placares.txt' limpando o anterior
+        
+        # ESCREVENDO NO ARQUIVO
         with open("placares.txt", "w", encoding="utf-8") as f:
             f.write(resultado + "\n")
+        
+        # AVISO NO TERMINAL
+        print(f"✅ ARQUIVO ATUALIZADO: {resultado}")
 
     except Exception as e:
-        print(f"Erro: {e}")
+        print(f"❌ ERRO NA TENTATIVA: {e}")
     finally:
         driver.quit()
 
-# --- ABAIXO A MODIFICAÇÃO PARA REPETIR 100X ---
 if __name__ == "__main__":
-    for i in range(1, 101):  # Vai de 1 até 100
-        print(f"\n>>> Iniciando atualização {i} de 100")
+    for i in range(1, 101):
+        print(f"\n--- INICIANDO COLETA {i}/100 ---")
         extrair_placar_limpo()
         
-        if i < 100:  # Se não for a última vez, espera 60 segundos
-            print("Aguardando 60 segundos para a próxima atualização...")
-            time.sleep(60)
-            
-    print("Fim das 100 atualizações.")
+        # AGUARDA 60 SEGUNDOS PARA A PRÓXIMA
+        print(f"Dormindo 60s... Próxima coleta em: {time.strftime('%H:%M:%S', time.localtime(time.time() + 60))}")
+        time.sleep(60)
