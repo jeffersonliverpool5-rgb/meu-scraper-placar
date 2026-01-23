@@ -1,12 +1,13 @@
 import os
 import time
+import re
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
 
-def extrair_tudo():
+def extrair_placar_definitivo():
     url = "https://www.aiscore.com/match-bsrc-indera-fc/ndkz6i3lgg6hxq3"
     
     options = Options()
@@ -19,7 +20,7 @@ def extrair_tudo():
     
     try:
         driver.get(url)
-        # Espera 30 segundos para o cronômetro "acordar" no site
+        # Espera o site "estabilizar" os dados do placar ao vivo
         time.sleep(30) 
         
         # 1. Capturar Nomes dos Times
@@ -30,19 +31,20 @@ def extrair_tudo():
             nome_casa = "BSRC"
             nome_fora = "Indera FC"
 
-        # 2. Capturar o Tempo (CRONÔMETRO EXATO)
-        cronometro = ""
+        # 2. Capturar o Tempo (BUSCA AGRESSIVA)
+        cronometro = "Ao vivo"
         try:
-            # Tenta pegar especificamente o elemento que pisca o minuto
-            # O AiScore costuma usar a classe 'status-info' ou 'playing'
-            temp_el = driver.find_element(By.XPATH, "//span[contains(@class, 'status-time')] | //div[contains(@class, 'match-status')]//span[contains(text(), \"'\")]")
-            cronometro = temp_el.text.strip()
+            # Pega TODO o texto da página para encontrar o minuto onde quer que ele esteja
+            corpo_pagina = driver.find_element(By.TAG_NAME, "body").text
+            # Procura por padrões como 45', 90+2', 15'
+            match = re.search(r"(\d+\+?\d?')", corpo_pagina)
+            if match:
+                cronometro = match.group(1)
+            else:
+                # Segunda tentativa: buscar em elementos de status específicos
+                cronometro = driver.find_element(By.CSS_SELECTOR, ".match-status, .status-info, .status-time").text.strip()
         except:
-            # Se falhar, faz uma busca geral por qualquer texto que tenha o sinal '
-            try:
-                cronometro = driver.find_element(By.XPATH, "//*[contains(text(), \"'\") and not(contains(text(), '\"'))]").text.strip()
-            except:
-                cronometro = "Live"
+            pass
 
         # 3. Capturar Placares
         try:
@@ -52,21 +54,22 @@ def extrair_tudo():
             placar_casa = "0"
             placar_fora = "0"
 
-        # Formato final sem data/hora: [Tempo] TimeCasa 0 x 0 TimeFora
-        # Limpeza extra no cronômetro para não vir lixo
-        cronometro = cronometro.replace('\n', '').strip()
-        
+        # Formata a string final
+        # Garante que o cronômetro tenha o ' se for apenas número
+        if cronometro.isdigit():
+            cronometro += "'"
+            
         resultado = f"[{cronometro}] {nome_casa} {placar_casa} x {placar_fora} {nome_fora}"
-        print(f"Resultado Final: {resultado}")
+        print(f"Resultado: {resultado}")
 
-        # Salva e apaga o anterior
+        # Salva no arquivo 'placares.txt' limpando o anterior
         with open("placares.txt", "w", encoding="utf-8") as f:
             f.write(resultado + "\n")
 
     except Exception as e:
-        print(f"Erro: {e}")
+        print(f"Erro no processo: {e}")
     finally:
         driver.quit()
 
 if __name__ == "__main__":
-    extrair_tudo()
+    extrair_placar_definitivo()
