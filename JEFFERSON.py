@@ -18,7 +18,7 @@ def extrair_e_subir():
     
     try:
         # URL do jogo que você quer monitorar
-        url = "https://www.aiscore.com/match-capital-cf-real-fc/ezk96i369dxu1kn"
+        url = "https://www.aiscore.com/match-south-island-united-fc-vanuatu-united-fc/9gklzi16gjpim7x"
         driver.get(url)
         
         # Espera o site carregar os números
