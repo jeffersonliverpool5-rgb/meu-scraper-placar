@@ -15,11 +15,11 @@ def extrair_aiscore():
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
     
     try:
-        # URL do jogo Instituto de Córdoba x Vélez Sarsfield
+        # URL solicitada
         url = "https://www.aiscore.com/match-instituto-de-cordoba-velez-sarsfield/vrqwni43wdgu4qn"
         driver.get(url)
         
-        # Espera o carregamento dos scripts do placar
+        # Espera o carregamento do conteúdo dinâmico
         time.sleep(15)
 
         # 1. Busca os nomes dos times
@@ -36,17 +36,20 @@ def extrair_aiscore():
         except:
             g1, g2 = "0", "0"
 
-        # 3. Busca o TEMPO/STATUS (O que está dentro do time-score ou status)
+        # 3. Busca o valor exato dentro de .time-score (Ex: 50)
         try:
-            # O AiScore costuma colocar o minuto ou "HT", "FT" dentro de .status ou .time-score
-            tempo_jg = driver.find_element(By.CSS_SELECTOR, ".match-score .status, .match-score .time-score").text.strip()
-            # Limpa possíveis quebras de linha que o HTML do site gera
-            tempo_jg = tempo_jg.replace("\n", " ").replace("\r", "")
+            # Busca especificamente o elemento time-score que contém o minuto
+            # O seletor abaixo foca no elemento que tem a classe time-score
+            tempo_val = driver.find_element(By.CSS_SELECTOR, ".time-score").text.strip()
+            
+            # Se o valor vier vazio por algum motivo, tentamos pelo atributo data-v
+            if not tempo_val:
+                tempo_val = driver.find_element(By.CSS_SELECTOR, "div[data-v-5689a66f].time-score").text.strip()
         except:
-            tempo_jg = "Ao Vivo"
+            tempo_val = "0"
 
-        # MONTAGEM DA LINHA FINAL
-        resultado = f"{time_casa} {g1} X {g2} {time_fora} | {tempo_jg}"
+        # MONTAGEM DA LINHA FINAL substituindo "Ao Vivo" pelo valor capturado
+        resultado = f"{time_casa} {g1} X {g2} {time_fora} | {tempo_val}"
         resultado = " ".join(resultado.split())
 
         with open("placares.txt", "w", encoding="utf-8") as f:
