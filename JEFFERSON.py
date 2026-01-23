@@ -5,15 +5,15 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
-import time
 
-# Configurações do Chrome (Modo Headless para rodar no GitHub Actions/Servidor)
+# 1. Configurações do Navegador
 chrome_options = Options()
-chrome_options.add_argument("--headless") 
+chrome_options.add_argument("--headless")  # Rode em segundo plano
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--disable-dev-shm-usage")
+# Adicionando um User-Agent para evitar ser bloqueado como bot
+chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36")
 
-# Inicializa o Driver
 service = Service(ChromeDriverManager().install())
 driver = webdriver.Chrome(service=service, options=chrome_options)
 
@@ -22,28 +22,34 @@ url = "https://www.aiscore.com/match-south-island-united-fc-vanuatu-united-fc/9g
 try:
     driver.get(url)
     
-    # Espera até que o nome de um dos times esteja visível (máximo 10 segundos)
-    wait = WebDriverWait(driver, 10)
+    # 2. Aguarda até 15 segundos para os elementos aparecerem
+    wait = WebDriverWait(driver, 15)
     
-    # Capturando nomes dos times
-    # No AiScore, os nomes costumam estar em elementos com a classe 'home-name' e 'away-name'
-    home_team = wait.until(EC.presence_of_element_located((By.CLASS_NAME, "home-name"))).text
-    away_team = driver.find_element(By.CLASS_NAME, "away-name").text
+    # Seletores atualizados baseados na estrutura do AiScore
+    # Buscando pelos nomes dos times
+    home_name = wait.until(EC.presence_of_element_located((By.XPATH, "//div[contains(@class, 'home-team')]//a[contains(@class, 'name')]"))).text
+    away_name = driver.find_element(By.XPATH, "//div[contains(@class, 'away-team')]//a[contains(@class, 'name')]").text
     
-    # Capturando placares
-    # Geralmente ficam em spans ou divs com classes como 'score' ou dentro de um container central
-    home_score = driver.find_element(By.CLASS_NAME, "home-score").text
-    away_score = driver.find_element(By.CLASS_NAME, "away-score").text
+    # Buscando o placar (score)
+    # O AiScore geralmente coloca o placar dentro de um container centralizado
+    home_score = driver.find_element(By.XPATH, "//div[contains(@class, 'score-item')][1]").text
+    away_score = driver.find_element(By.XPATH, "//div[contains(@class, 'score-item')][2]").text
 
-    print(f"Partida: {home_team} vs {away_team}")
-    print(f"Placar: {home_score} - {away_score}")
+    # 3. Formatação da linha
+    resultado = f"{home_name} {home_score} - {away_score} {away_name}\n"
+    print(f"Dados capturados: {resultado}")
 
-    # Lógica para salvar no seu arquivo placares.txt
+    # 4. Escrita no arquivo (Modo 'a' para adicionar ao final, 'w' para sobrescrever)
     with open("placares.txt", "a", encoding="utf-8") as f:
-        f.write(f"{home_team} {home_score} x {away_score} {away_team}\n")
+        f.write(resultado)
+        f.flush() # Garante que os dados saiam do buffer para o arquivo
+    
+    print("Arquivo placares.txt atualizado com sucesso!")
 
 except Exception as e:
-    print(f"Erro ao buscar dados: {e}")
+    print(f"Erro ao capturar dados: {e}")
+    # Caso queira debugar, tire o print abaixo:
+    # print(driver.page_source) 
 
 finally:
     driver.quit()
