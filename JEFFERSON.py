@@ -21,47 +21,42 @@ def extrair_placar():
     
     try:
         driver.get(url)
+        # Espera o site carregar completamente
+        time.sleep(25) 
         
-        # Espera forçada para o JavaScript carregar os números
-        time.sleep(20) 
-        
-        # Rola um pouco a página para ativar o carregamento de dados dinâmicos
-        driver.execute_script("window.scrollTo(0, 500);")
-        time.sleep(2)
-
-        # Seletores via XPATH baseados na estrutura visual do AiScore (Placar central)
+        # Tenta pegar o tempo (cronômetro)
         try:
-            # O tempo geralmente fica no centro, em cima ou embaixo do placar
-            cronometro = driver.find_element(By.XPATH, "//div[contains(@class, 'match-status')]//span | //div[contains(@class, 'time-box')]").text
+            # Procura especificamente pelo texto que contém o minuto (ex: 35')
+            cronometro = driver.find_element(By.CSS_SELECTOR, ".match-status .status, .time-box, .status-info").text
         except:
-            cronometro = "Em jogo"
+            cronometro = "Ao vivo"
 
+        # Tenta pegar os placares usando seletores mais diretos do cabeçalho
         try:
-            # Busca o placar da esquerda (Casa) e direita (Fora)
-            # No AiScore, os placares grandes ficam em spans dentro de containers de score
-            placar_casa = driver.find_element(By.XPATH, "(//span[contains(@class, 'score')])[1]").text
-            placar_fora = driver.find_element(By.XPATH, "(//span[contains(@class, 'score')])[2]").text
+            # Procura pelos números grandes do placar
+            placar_casa = driver.find_element(By.CSS_SELECTOR, ".home-score, .score-item.home").text
+            placar_fora = driver.find_element(By.CSS_SELECTOR, ".away-score, .score-item.away").text
             
-            # Se o placar vier vazio, tenta outro seletor de fallback
-            if not placar_casa:
-                placar_casa = driver.find_element(By.CLASS_NAME, "home-score").text
-            if not placar_fora:
-                placar_fora = driver.find_element(By.CLASS_NAME, "away-score").text
+            # Se ainda vier vazio, tenta via XPath direto no container de placar
+            if not placar_casa or not placar_fora:
+                placar_casa = driver.find_element(By.XPATH, "//div[contains(@class,'score-number')][1]").text
+                placar_fora = driver.find_element(By.XPATH, "//div[contains(@class,'score-number')][2]").text
         except:
             placar_casa = "0"
             placar_fora = "0"
 
-        resultado = f"{time.strftime('%d/%m/%Y %H:%M:%S')} - [{cronometro}] Casa {placar_casa} x {placar_fora} Fora"
-        print(f"Resultado: {resultado}")
+        # Se o cronômetro pegou o placar por erro, limpamos
+        if ":" in placar_casa: placar_casa = "0"
 
-        # Gravação no arquivo
-        with open("placares.txt", "a", encoding="utf-8") as f:
+        resultado = f"{time.strftime('%d/%m/%Y %H:%M:%S')} - [{cronometro}] Casa {placar_casa} x {placar_fora} Fora"
+        print(f"Gravando: {resultado}")
+
+        # MODO 'w' APAGA O ANTERIOR E SALVA O NOVO
+        with open("placares.txt", "w", encoding="utf-8") as f:
             f.write(resultado + "\n")
 
     except Exception as e:
-        print(f"Erro Geral: {e}")
-        with open("placares.txt", "a", encoding="utf-8") as f:
-            f.write(f"{time.strftime('%d/%m/%Y %H:%M:%S')} - Falha técnica no carregamento\n")
+        print(f"Erro: {e}")
     finally:
         driver.quit()
 
