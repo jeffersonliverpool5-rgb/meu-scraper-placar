@@ -3,74 +3,64 @@ import time
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
 from webdriver_manager.chrome import ChromeDriverManager
+from selenium.webdriver.common.by import By
 
-def extrair_placar_limpo():
-    url = "https://www.aiscore.com/match-ca-penarol-boston-river/ndqmliw2oxehrkv"
-    
+def extrair_aiscore():
     options = Options()
     options.add_argument("--headless")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
     options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-
-    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+    
+    # Configuração específica para ambientes Linux/GitHub Actions
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=options)
     
     try:
+        url = "https://www.aiscore.com/match-capital-cf-real-fc/ezk96i369dxu1kn"
         driver.get(url)
-        # REDUZI PARA 15 SEGUNDOS: 30 era muito tempo de espera parado
-        time.sleep(15) 
         
-        # 1. Capturar Nomes dos Times
-        try:
-            nome_casa = driver.find_element(By.CSS_SELECTOR, ".home-team-name, .home-name, .home-team .name").text.strip()
-            nome_fora = driver.find_element(By.CSS_SELECTOR, ".away-team-name, .away-name, .away-team .name").text.strip()
-        except:
-            nome_casa = "BSRC"
-            nome_fora = "Indera FC"
+        # Espera o carregamento
+        time.sleep(20)
 
-        # 2. Capturar o Tempo
-        cronometro = ""
         try:
-            elementos_tempo = driver.find_elements(By.XPATH, "//*[contains(text(), \"'\")]")
-            for el in elementos_tempo:
-                texto = el.text.strip()
-                if "'" in texto and len(texto) <= 5:
-                    cronometro = texto
-                    break
-            if not cronometro:
-                cronometro = driver.find_element(By.CSS_SELECTOR, ".match-status, .status-info").text.strip()
+            time_casa = driver.find_element(By.XPATH, "//div[contains(@class, 'home-team')]//a[contains(@class, 'name')]").text.strip()
+            time_fora = driver.find_element(By.XPATH, "//div[contains(@class, 'away-team')]//a[contains(@class, 'name')]").text.strip()
         except:
-            cronometro = "Ao vivo"
+            time_casa, time_fora = "Capital CF", "Real FC"
 
-        # 3. Capturar Placares
         try:
-            placar_casa = driver.find_element(By.CSS_SELECTOR, ".home-score").text.strip()
-            placar_fora = driver.find_element(By.CSS_SELECTOR, ".away-score").text.strip()
+            g1 = driver.find_element(By.CLASS_NAME, "home-score").text.strip()
+            g2 = driver.find_element(By.CLASS_NAME, "away-score").text.strip()
         except:
-            placar_casa = "0"
-            placar_fora = "0"
+            g1, g2 = "0", "0"
 
-        resultado = f"[{cronometro}] {nome_casa} {placar_casa} x {placar_fora} {nome_fora}"
-        
-        # ESCREVENDO NO ARQUIVO
+        try:
+            tempo_jg = driver.find_element(By.CSS_SELECTOR, ".score-status .status").text.strip()
+            tempo_jg = tempo_jg.replace("\n", " ")
+        except:
+            tempo_jg = "Ao Vivo"
+
+        resultado = f"{time_casa} {g1} X {g2} {time_fora} | {tempo_jg}"
+        resultado = " ".join(resultado.split())
+
+        # No Actions, o print é o que você consegue ver no log em tempo real
+        print(f"--- PLACAR CAPTURADO: {resultado} ---")
+
         with open("placares.txt", "w", encoding="utf-8") as f:
-            f.write(resultado + "\n")
-        
-        # AVISO NO TERMINAL
-        print(f"✅ ARQUIVO ATUALIZADO: {resultado}")
-
+            f.write(resultado)
+            
     except Exception as e:
-        print(f"❌ ERRO NA TENTATIVA: {e}")
+        print(f"ERRO: {e}")
     finally:
         driver.quit()
 
 if __name__ == "__main__":
+    # Roda 100 vezes dentro da mesma Action
     for i in range(1, 101):
-        print(f"\n--- INICIANDO COLETA {i}/100 ---")
-        extrair_placar_limpo()
-        
-        # AGUARDA 60 SEGUNDOS PARA A PRÓXIMA
-        print(f"Dormindo 60s... Próxima coleta em: {time.strftime('%H:%M:%S', time.localtime(time.time() + 60))}")
-        time.sleep(60)
+        print(f"\n[VOLTA {i}] Horário: {time.strftime('%H:%M:%S')}")
+        extrair_aiscore()
+        if i < 100:
+            time.sleep(60)
