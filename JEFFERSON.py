@@ -31,7 +31,7 @@ def extrair_aiscore():
     
     try:
         # URL do jogo que você enviou por último
-        url = "https://www.aiscore.com/match-trinidad-tobago-u20-grenada-u20/ndkz6i3lopnsxq3"
+        url = "https://www.aiscore.com/match-talleres-cordoba-club-atletico-newell's-old-boys/ezk96i3g42zf1kn/h2h"
         driver.get(url)
         
         # Espera para carregar o conteúdo dinâmico
