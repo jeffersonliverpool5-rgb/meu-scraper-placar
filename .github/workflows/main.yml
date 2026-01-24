@@ -1,36 +1,24 @@
-name: Bot de Placar AiScore
-
+name: Atualizador de Placar
 on:
-  schedule:
-    - cron: '*/5 * * * *' # Executa a cada 5 minutos
-  workflow_dispatch:      # Permite rodar manualmente no botão 'Run workflow'
-
-permissions:
-  contents: write         # Essencial para salvar o arquivo placares.txt
+  workflow_dispatch: # Permite rodar manual uma vez e ele segue por 100 min
 
 jobs:
-  run_bot:
+  build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # ESSENCIAL para permitir que o script salve o arquivo
     steps:
-      - name: Baixar Código
+      - name: Checkout do código
         uses: actions/checkout@v3
 
-      - name: Instalar Python
+      - name: Configurar Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.9'
 
-      - name: Instalar Dependencias
+      - name: Instalar Dependências
         run: |
           pip install selenium webdriver-manager
 
-      - name: Executar Script
-        run: python JEFFERSON.py
-
-      - name: Salvar e Enviar Dados (Git Push)
-        run: |
-          git config --global user.name "GitHub Action Bot"
-          git config --global user.email "bot@github.com"
-          git add placares.txt
-          # Só faz o commit se houver mudanças reais no arquivo
-          git diff --quiet && git diff --staged --quiet || (git commit -m "Placar atualizado: $(date)" && git push)
+      - name: Rodar Script
+        run: python seu_script.py # Troque pelo nome do seu arquivo
