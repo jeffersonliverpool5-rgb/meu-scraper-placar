@@ -42,7 +42,7 @@ def extrair_aiscore():
             time_casa = driver.find_element(By.XPATH, "//div[contains(@class, 'home-team')]//a[contains(@class, 'name')]").text.strip()
             time_fora = driver.find_element(By.XPATH, "//div[contains(@class, 'away-team')]//a[contains(@class, 'name')]").text.strip()
         except:
-            time_casa, time_fora = "Sport Club Corinthians Paulista" , "Bahia"
+            time_casa, time_fora = "Sport Club Corinthians Paulista","Bahia"
 
         # 2. Busca o Placar (Gols)
         try:
