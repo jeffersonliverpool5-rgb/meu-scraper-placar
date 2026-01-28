@@ -78,10 +78,10 @@ def extrair_aiscore():
 
 # REPETIR 100 VEZES COM INTERVALO DE 1 MINUTO
 if __name__ == "__main__":
-    for i in range(1, 101):
+    for i in range(1, 151):
         print(f"\n--- ATUALIZAÇÃO {i} de 100 ---")
         extrair_aiscore()
         
         if i < 100:
             print("Aguardando 60 segundos...")
-            time.sleep(60)
+            time.sleep(30)
