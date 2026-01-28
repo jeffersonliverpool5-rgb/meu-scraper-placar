@@ -31,7 +31,7 @@ def extrair_aiscore():
     
     try:
         # URL do jogo que você enviou por último
-        url = "https://www.aiscore.com/br/match-arsenal-women-as-far-rabat-women/wv78xivmoxraokr/h2h"
+        url = "https://www.aiscore.com/match-napoli-chelsea/vmqy9ivdzywigk9/h2h"
         driver.get(url)
         
         # Espera para carregar o conteúdo dinâmico
@@ -42,7 +42,7 @@ def extrair_aiscore():
             time_casa = driver.find_element(By.XPATH, "//div[contains(@class, 'home-team')]//a[contains(@class, 'name')]").text.strip()
             time_fora = driver.find_element(By.XPATH, "//div[contains(@class, 'away-team')]//a[contains(@class, 'name')]").text.strip()
         except:
-            time_casa, time_fora = "Arsenal L.F.C. (Feminino)", "AS FAR Rabat Women"
+            time_casa, time_fora = "Napoli", "Chelsea"
 
         # 2. Busca o Placar (Gols)
         try:
