@@ -31,7 +31,7 @@ def extrair_aiscore():
     
     try:
         # URL do jogo que você enviou por último
-        url = "https://www.aiscore.com/match-brighton-hove-albion-everton/527r3i49yy5h47e"
+        url = "https://www.aiscore.com/match-hamburger-sv-fc-bayern-munich/g6763i5dljwto7r/h2h"
         driver.get(url)
         
         # Espera para carregar o conteúdo dinâmico
@@ -42,7 +42,7 @@ def extrair_aiscore():
             time_casa = driver.find_element(By.XPATH, "//div[contains(@class, 'home-team')]//a[contains(@class, 'name')]").text.strip()
             time_fora = driver.find_element(By.XPATH, "//div[contains(@class, 'away-team')]//a[contains(@class, 'name')]").text.strip()
         except:
-            time_casa, time_fora = "Brighton Hove Albion","Everton"
+            time_casa, time_fora = "Hamburger SV","FC Bayern Munich"
 
         # 2. Busca o Placar (Gols)
         try:
